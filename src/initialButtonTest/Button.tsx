@@ -1,12 +1,14 @@
 import * as React from "react";
 import { FC } from "react";
 import styled from "styled-components";
+import Scrollbars from "../scrollbar";
 import { ButtonProps } from "./Button.types";
 
 const StyledButton = styled.button<ButtonProps>`
   border: 0;
   line-height: 1;
   font-size: 15px;
+  height: 800px;
   cursor: pointer;
   font-weight: 700;
   font-weight: bold;
@@ -44,16 +46,18 @@ const Button: FC<ButtonProps> = ({
   ...props
 }) => {
   return (
-    <StyledButton
-      type="button"
-      onClick={onClick}
-      primary={primary}
-      disabled={disabled}
-      size={size}
-      {...props}
-    >
-      {text}
-    </StyledButton>
+    <Scrollbars style={{ background: "gray", width: 500, height: 300 }}>
+      <StyledButton
+        type="button"
+        onClick={onClick}
+        primary={primary}
+        disabled={disabled}
+        size={size}
+        {...props}
+      >
+        {text}
+      </StyledButton>
+    </Scrollbars>
   );
 };
 
