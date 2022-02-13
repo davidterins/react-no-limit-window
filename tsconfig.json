@@ -18,6 +18,8 @@
   "exclude": [
     "dist",
     "node_modules",
+    "react-window",
+    "react-custom-scrollbars",
     "src/**/*.test.tsx",
     "src/**/*.stories.tsx"
   ]
