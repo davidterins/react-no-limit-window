@@ -1,0 +1,6 @@
+[submodule "react-window"]
+	path = react-window
+	url = https://github.com/davidterins/react-window.git
+[submodule "react-custom-scrollbars"]
+	path = react-custom-scrollbars
+	url = https://github.com/davidterins/react-custom-scrollbars.git
