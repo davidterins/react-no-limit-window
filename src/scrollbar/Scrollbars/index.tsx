@@ -677,7 +677,7 @@ export default class Scrollbars extends Component<ScrollbarProps, State> {
     return createElement(
       tagName,
       {
-        id: "container",
+        id: "scrollbar-container",
         ...props,
         style: containerStyle,
         ref: (ref: Element) => {
