@@ -1,5 +1,5 @@
-export default function getInnerHeight(el: HTMLElement) {
-  const { clientHeight } = el;
-  const { paddingTop, paddingBottom } = getComputedStyle(el);
+export default function getInnerHeight(element: HTMLElement) {
+  const { clientHeight } = element;
+  const { paddingTop, paddingBottom } = getComputedStyle(element);
   return clientHeight - parseFloat(paddingTop) - parseFloat(paddingBottom);
 }
