@@ -79,7 +79,7 @@ export default function createListComponent({
       direction: "ltr",
       itemData: undefined,
       layout: "vertical",
-      overscanCount: 2,
+      overscanCount: 0,
       useIsScrolling: false,
     };
     state: State = {
@@ -100,7 +100,6 @@ export default function createListComponent({
       super(props);
       props.setRef(this);
     }
-
 
     public Scrolla(
       clientHeight: number,
@@ -245,9 +244,7 @@ export default function createListComponent({
 
       const [startIndex, stopIndex] = this._getRangeToRender();
 
-      // (handleScroll) => {
-      //   return this._onScrollVertical(null);
-      // };
+      console.log(`Range to render: ${startIndex} -> ${stopIndex}`);
 
       const items = [];
 
@@ -335,11 +332,13 @@ export default function createListComponent({
         },
       });
 
-      let listInner = createElement(innerTagName || "div", {
-        id: "list-inner-element",
+      let virtualizedItemsContainer = createElement(innerTagName || "div", {
+        id: "virtualized-items-container",
         children: items,
         ref: innerRef,
         style: {
+          // TODO: Set this height to 100% + 1px or something
+          // to trigger scrollbar, then set overflow to hidden.
           height: "100%",
           // height: isHorizontal ? "100%" : estimatedTotalSize,
           pointerEvents: isScrolling ? "none" : undefined,
@@ -347,20 +346,7 @@ export default function createListComponent({
         },
       });
 
-      return listInner; // reactWindowElements;
-      // <Scrollbar
-      //   virtualizedScrollHeight={1000000}
-      //   renderView={() => listContainer}
-      //   onScroll={onScrollz}
-      // >
-      // {
-      /* {reactWindowElements} */
-      // }
-      // {listInner}
-      // hej
-      // <div style={{ height: 1000000 }} />
-      // då
-      // </Scrollbar>
+      return virtualizedItemsContainer;
     }
 
     _callOnItemsRendered = memoizeOne(
@@ -451,10 +437,11 @@ export default function createListComponent({
         const isRtl = direction === "rtl";
         const offsetHorizontal = isHorizontal ? offset : 0;
         itemStyleCache[index] = style = {
-          position: "absolute",
-          left: isRtl ? undefined : offsetHorizontal,
-          right: isRtl ? offsetHorizontal : undefined,
-          top: !isHorizontal ? offset : 0,
+          position: "relative",
+          // position: "absolute",
+          // left: isRtl ? undefined : offsetHorizontal,
+          // right: isRtl ? offsetHorizontal : undefined,
+          // top: !isHorizontal ? offset : 0,
           height: !isHorizontal ? size : "100%",
           width: isHorizontal ? size : "100%",
         };
@@ -552,7 +539,7 @@ export default function createListComponent({
       scrollTop: number
     ): void => {
       // const { clientHeight, scrollHeight, scrollTop } = event.currentTarget;
-      console.log({ clientHeight, scrollHeight, scrollTop });
+
       this.setState((prevState) => {
         if (prevState.scrollOffset === scrollTop) {
           // Scroll position may have been updated by cDM/cDU,
@@ -567,6 +554,8 @@ export default function createListComponent({
           0,
           Math.min(scrollTop, scrollHeight - clientHeight)
         );
+
+        console.log({ clientHeight, scrollHeight, scrollTop, scrollOffset });
 
         return {
           isScrolling: true,
