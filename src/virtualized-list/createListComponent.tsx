@@ -340,6 +340,7 @@ export default function createListComponent({
           // TODO: Set this height to 100% + 1px or something
           // to trigger scrollbar, then set overflow to hidden.
           height: "100%",
+          overflow: "none",
           // height: isHorizontal ? "100%" : estimatedTotalSize,
           pointerEvents: isScrolling ? "none" : undefined,
           width: isHorizontal ? estimatedTotalSize : "100%",

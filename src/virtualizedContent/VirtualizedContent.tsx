@@ -16,9 +16,14 @@ const VirtualizedContent: FC = () => {
 
   return (
     <div style={layoutStyle}>
-      <Scrollbar>
+      <AutoSizer>
+        {{height, width} => {
+  <Scrollbar>
 
-      </Scrollbar>
+  </Scrollbar>
+        }}
+      </AutoSizer>
+    
       {/* <VariableSizeList
         height={300}
         width={"100%"}
