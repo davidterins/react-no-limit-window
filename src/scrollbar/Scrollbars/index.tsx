@@ -1,7 +1,15 @@
 import raf, { cancel as caf } from "raf";
 import css from "dom-css";
 import PropTypes from "prop-types";
-import { Component, createElement, cloneElement, createRef, CSSProperties } from "react";
+import {
+  Component,
+  createElement,
+  cloneElement,
+  createRef,
+  CSSProperties,
+  useRef,
+  useEffect,
+} from "react";
 import isString from "../utils/isString";
 import getScrollbarWidth from "../utils/getScrollbarWidth";
 import returnFalse from "../utils/returnFalse";
@@ -866,7 +874,36 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       }),
     };
 
-    const Row = ({ index, style }: any) => <div style={style}>Row {index}</div>;
+    const Row = ({ index, style }: any) => {
+      const rowRef = useRef<any>();
+      console.log("HERE CURRENT");
+      useEffect(() => {
+        if (rowRef.current) {
+          console.log("HERE CURRENT WOOT");
+          setRowHeight(index, rowRef.current.clientHeight);
+        }
+      }, [rowRef]);
+
+      return (
+        <div ref={rowRef} style={{ ...style }}>
+          Row {index}
+        </div>
+      );
+    };
+
+    const setRowHeight = (index: number, height: number) => {
+      if (!rowHeights.has(index)) {
+        rowHeights.set(index, height);
+      } else {
+        rowHeights[index] = height;
+      }
+    };
+    const getRowHeight = (index) => {
+      if (rowHeights.has(index)) {
+        return rowHeights[index];
+      }
+      return 35;
+    };
 
     let listViewPortElement = createElement("div", {
       id: "list-viewport",
@@ -897,7 +934,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
           height={this.viewPort ? this.viewPort.clientHeight + 1 : 300} // want this to be only the view
           width={"100%"}
           itemCount={itemCount}
-          itemSize={() => itemHeight}
+          itemSize={getRowHeight}
         >
           {Row}
         </VariableSizeList>
@@ -969,3 +1006,4 @@ Scrollbar.defaultProps = {
 };
 
 export type ScrollbarProps = typeof Scrollbar.defaultProps & PropTypes.InferProps<typeof propTypes>;
+const rowHeights: Map<number, number> = new Map();
