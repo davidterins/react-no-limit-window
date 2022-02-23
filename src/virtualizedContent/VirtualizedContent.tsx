@@ -8,7 +8,7 @@ const layoutStyle: CSSProperties = {
   display: "inline-block",
   width: "100%",
   height: 300,
-  background: "blue",
+  background: "gray",
 };
 
 const VirtualizedContent: FC = () => {
@@ -16,14 +16,12 @@ const VirtualizedContent: FC = () => {
 
   return (
     <div style={layoutStyle}>
-      <AutoSizer>
-        {{height, width} => {
-  <Scrollbar>
+      {/* <AutoSizer>
+        {{height, width} => { */}
+      <Scrollbar></Scrollbar>
+      {/* }}
+      </AutoSizer> */}
 
-  </Scrollbar>
-        }}
-      </AutoSizer>
-    
       {/* <VariableSizeList
         height={300}
         width={"100%"}

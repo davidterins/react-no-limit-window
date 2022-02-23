@@ -27,13 +27,14 @@ export function renderThumbHorizontalDefault({ style, ...props }: any) {
 }
 
 export function renderTrackVerticalDefault({ style, ...props }: any) {
-  const finalStyle = {
+  const finalStyle: CSSProperties = {
     ...style,
     right: 2,
     bottom: 2,
     top: 2,
+    display: "visible",
     borderRadius: 3,
-    backgroundColor: "gray",
+    backgroundColor: "#FFFFFF30",
   };
   return <div style={finalStyle} {...props} />;
 }
