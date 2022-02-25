@@ -36,14 +36,7 @@ import {
   renderThumbVerticalDefault,
 } from "./defaultRenderElements";
 import React from "react";
-import VariableSizeList from "../../virtualized-list/VariableSizeList";
 import { propTypes } from "./scrollbar.types";
-import { IScrollable } from "../../virtualized-list/createListComponent";
-
-const itemCount = 100;
-const itemHeight = 35;
-const virtHeight = itemCount * itemHeight;
-const scrollSpeed = /*change to dynamic height value of viewport*/ 300 / itemCount;
 
 interface State {
   didMountUniversal: boolean;
@@ -135,9 +128,6 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     autoHeightMin: number;
     autoHeightMax: number;
     universal: boolean;
-    virtualizedScrollHeight: number;
-    // height: number;
-    // width: number;
   };
   constructor(props: ScrollbarProps, rest) {
     super(props, rest);
@@ -152,10 +142,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
     this.handleTrackMouseEnter = this.handleTrackMouseEnter.bind(this);
     this.handleTrackMouseLeave = this.handleTrackMouseLeave.bind(this);
-    this.handleHorizontalTrackMouseDown = this.handleHorizontalTrackMouseDown.bind(this);
-    this.handleVerticalTrackMouseDown = this.handleVerticalTrackMouseDown.bind(this);
-    this.handleHorizontalThumbMouseDown = this.handleHorizontalThumbMouseDown.bind(this);
-    this.handleVerticalThumbMouseDown = this.handleVerticalThumbMouseDown.bind(this);
+    this.handleHorizontalTrackMouseDown =
+      this.handleHorizontalTrackMouseDown.bind(this);
+    this.handleVerticalTrackMouseDown =
+      this.handleVerticalTrackMouseDown.bind(this);
+    this.handleHorizontalThumbMouseDown =
+      this.handleHorizontalThumbMouseDown.bind(this);
+    this.handleVerticalThumbMouseDown =
+      this.handleVerticalThumbMouseDown.bind(this);
     this.handleWindowResize = this.handleWindowResize.bind(this);
     this.handleScroll = this.handleScroll.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
@@ -302,12 +296,17 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
       // this.syncScrollStatus(customScrollTop, scrollTop);
 
-      // Add this to update child view.
-      (this.testRef as IScrollable).Scrolla(
+      this.props.onScroll(
         this.viewPort.clientHeight,
         this.props.virtualizedScrollHeight,
         this.customScrollStatus.scrollTop
       );
+      // Add this to update child view.
+      // (this.testRef as IScrollable).Scrolla(
+      //   this.viewPort.clientHeight,
+      //   this.props.virtualizedScrollHeight,
+      //   this.customScrollStatus.scrollTop
+      // );
     });
     // if (k.deltaY > 0) {
 
@@ -319,36 +318,78 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
   addListeners() {
     /* istanbul ignore if */
     if (typeof document === "undefined" || !this.viewPort) return;
-    const { viewPort: view, trackHorizontal, trackVertical, thumbHorizontal, thumbVertical } = this;
+    const {
+      viewPort: view,
+      trackHorizontal,
+      trackVertical,
+      thumbHorizontal,
+      thumbVertical,
+    } = this;
     view.addEventListener("mousewheel", this.handleWheel);
     view.addEventListener("scroll", this.handleScroll);
     if (!getScrollbarWidth()) return;
     trackHorizontal.addEventListener("mouseenter", this.handleTrackMouseEnter);
     trackHorizontal.addEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackHorizontal.addEventListener("mousedown", this.handleHorizontalTrackMouseDown);
+    trackHorizontal.addEventListener(
+      "mousedown",
+      this.handleHorizontalTrackMouseDown
+    );
     trackVertical.addEventListener("mouseenter", this.handleTrackMouseEnter);
     trackVertical.addEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackVertical.addEventListener("mousedown", this.handleVerticalTrackMouseDown);
-    thumbHorizontal.addEventListener("mousedown", this.handleHorizontalThumbMouseDown);
-    thumbVertical.addEventListener("mousedown", this.handleVerticalThumbMouseDown);
+    trackVertical.addEventListener(
+      "mousedown",
+      this.handleVerticalTrackMouseDown
+    );
+    thumbHorizontal.addEventListener(
+      "mousedown",
+      this.handleHorizontalThumbMouseDown
+    );
+    thumbVertical.addEventListener(
+      "mousedown",
+      this.handleVerticalThumbMouseDown
+    );
     window.addEventListener("resize", this.handleWindowResize);
   }
 
   removeListeners() {
     /* istanbul ignore if */
     if (typeof document === "undefined" || !this.viewPort) return;
-    const { viewPort: view, trackHorizontal, trackVertical, thumbHorizontal, thumbVertical } = this;
+    const {
+      viewPort: view,
+      trackHorizontal,
+      trackVertical,
+      thumbHorizontal,
+      thumbVertical,
+    } = this;
     view.removeEventListener("mousewheel", this.handleWheel);
     view.removeEventListener("scroll", this.handleScroll);
     if (!getScrollbarWidth()) return;
-    trackHorizontal.removeEventListener("mouseenter", this.handleTrackMouseEnter);
-    trackHorizontal.removeEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackHorizontal.removeEventListener("mousedown", this.handleHorizontalTrackMouseDown);
+    trackHorizontal.removeEventListener(
+      "mouseenter",
+      this.handleTrackMouseEnter
+    );
+    trackHorizontal.removeEventListener(
+      "mouseleave",
+      this.handleTrackMouseLeave
+    );
+    trackHorizontal.removeEventListener(
+      "mousedown",
+      this.handleHorizontalTrackMouseDown
+    );
     trackVertical.removeEventListener("mouseenter", this.handleTrackMouseEnter);
     trackVertical.removeEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackVertical.removeEventListener("mousedown", this.handleVerticalTrackMouseDown);
-    thumbHorizontal.removeEventListener("mousedown", this.handleHorizontalThumbMouseDown);
-    thumbVertical.removeEventListener("mousedown", this.handleVerticalThumbMouseDown);
+    trackVertical.removeEventListener(
+      "mousedown",
+      this.handleVerticalTrackMouseDown
+    );
+    thumbHorizontal.removeEventListener(
+      "mousedown",
+      this.handleHorizontalThumbMouseDown
+    );
+    thumbVertical.removeEventListener(
+      "mousedown",
+      this.handleVerticalThumbMouseDown
+    );
     window.removeEventListener("resize", this.handleWindowResize);
     // Possibly setup by `handleDragStart`
     this.teardownDragging();
@@ -623,11 +664,15 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     });
   }
 
-  update(scrollDelta: number = 0, callback: (values: ScrollUpdateArgs) => void = () => {}) {
+  update(
+    scrollDelta: number = 0,
+    callback: (values: ScrollUpdateArgs) => void = () => {}
+  ) {
     this.raf(() => this._update(scrollDelta, callback));
   }
 
-  clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
+  clamp = (num: number, min: number, max: number) =>
+    Math.min(Math.max(num, min), max);
 
   syncScrollStatus(customScrollTop: number, nativeScrolltop: number) {
     let nativeAtBottom = this.scrollIsAtBottom(
@@ -648,7 +693,11 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     console.log(`native: ${nativeAtBottom}, custom: ${customAtBottom}`);
   }
 
-  scrollIsAtBottom(scrollTop: number, clientHeight: number, scrollHeight: number) {
+  scrollIsAtBottom(
+    scrollTop: number,
+    clientHeight: number,
+    scrollHeight: number
+  ) {
     return scrollTop + clientHeight == scrollHeight;
   }
 
@@ -657,15 +706,23 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
   _update(scrollDelta: number, callback: (values: ScrollUpdateArgs) => void) {
     const { onUpdate, hideTracksWhenNotNeeded } = this.props;
 
-    const { scrollLeft, clientWidth, scrollWidth, clientHeight, scrollHeight, scrollTop, top } =
-      this.getViewPortElementValues();
+    const {
+      scrollLeft,
+      clientWidth,
+      scrollWidth,
+      clientHeight,
+      scrollHeight,
+      scrollTop,
+      top,
+    } = this.getViewPortElementValues();
 
     // if (getScrollbarWidth() > 0) {
     console.log("HAHAH");
     const trackHorizontalWidth = getInnerWidth(this.trackHorizontal);
     const thumbHorizontalWidth = this.getThumbHorizontalWidth();
     const thumbHorizontalX =
-      (scrollLeft / (scrollWidth - clientWidth)) * (trackHorizontalWidth - thumbHorizontalWidth);
+      (scrollLeft / (scrollWidth - clientWidth)) *
+      (trackHorizontalWidth - thumbHorizontalWidth);
     const thumbHorizontalStyle = {
       width: thumbHorizontalWidth,
       transform: `translateX(${thumbHorizontalX}px)`,
@@ -692,9 +749,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     const thumbMaxPos = trackVerticalHeight - thumbVerticalHeight;
 
     let thumbVerticalPosRaw =
-      (customScrollTop / (virtualizedScrollHeight - clientHeight)) * thumbMaxPos;
+      (customScrollTop / (virtualizedScrollHeight - clientHeight)) *
+      thumbMaxPos;
 
-    const thumbVerticalY = this.clamp(thumbVerticalPosRaw, thumbMinPos, thumbMaxPos);
+    const thumbVerticalY = this.clamp(
+      thumbVerticalPosRaw,
+      thumbMinPos,
+      thumbMaxPos
+    );
 
     let customUpdateScrollInfo: ScrollInfo = {
       top: 0, //customScrollTop / (virtualizedScrollHeight - clientHeight) || 0,
@@ -712,35 +774,23 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       console.log("PRE-RAW: " + thumbVerticalPosRaw);
 
       // add scroll delta
-      let deltaScrollY = this.viewPort.scrollTop - this.nativeScrollStatus.scrollTop;
+      let deltaScrollY =
+        this.viewPort.scrollTop - this.nativeScrollStatus.scrollTop;
 
       const dir = scrollDelta;
 
       console.log("DELTA: " + deltaScrollY);
 
-      thumbVerticalPosRaw += scrollSpeed * dir;
-      // if (
-      //   nativeUpdatedScrollInfo.atBottom &&
-      //   !customUpdateScrollInfo.atBottom
-      // ) {
-      //   this.ignoreNextUpdate = true;
-      //   // this.viewPort.scrollTop += -1;
-      //   thumbVerticalPosRaw += addValue;
-      // } else if (
-      //   nativeUpdatedScrollInfo.atTop &&
-      //   !customUpdateScrollInfo.atTop
-      // ) {
-      //   this.ignoreNextUpdate = true;
-      //   // this.viewPort.scrollTop += 1;
-      //   thumbVerticalPosRaw -= addValue;
-      // } else {
-      //   // thumbVerticalPosRaw += addValue;
-      // }
+      thumbVerticalPosRaw += this.props.scrollSpeed * dir;
 
       console.log("POST-RAW: " + thumbVerticalPosRaw);
     }
 
-    const finalThumbVerticalY = this.clamp(thumbVerticalPosRaw, thumbMinPos, thumbMaxPos);
+    const finalThumbVerticalY = this.clamp(
+      thumbVerticalPosRaw,
+      thumbMinPos,
+      thumbMaxPos
+    );
 
     const thumbVerticalStyle: CSSProperties = {
       height: thumbVerticalHeight,
@@ -809,6 +859,8 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       autoHeightMax,
       style,
       children,
+      height,
+      width,
       ...props
     } = this.props;
     /* eslint-enable no-unused-vars */
@@ -874,37 +926,6 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       }),
     };
 
-    const Row = ({ index, style }: any) => {
-      const rowRef = useRef<any>();
-      console.log("HERE CURRENT");
-      useEffect(() => {
-        if (rowRef.current) {
-          console.log("HERE CURRENT WOOT");
-          setRowHeight(index, rowRef.current.clientHeight);
-        }
-      }, [rowRef]);
-
-      return (
-        <div ref={rowRef} style={{ ...style }}>
-          Row {index}
-        </div>
-      );
-    };
-
-    const setRowHeight = (index: number, height: number) => {
-      if (!rowHeights.has(index)) {
-        rowHeights.set(index, height);
-      } else {
-        rowHeights[index] = height;
-      }
-    };
-    const getRowHeight = (index) => {
-      if (rowHeights.has(index)) {
-        return rowHeights[index];
-      }
-      return 35;
-    };
-
     let listViewPortElement = createElement("div", {
       id: "list-viewport",
       // className,
@@ -915,30 +936,24 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
         position: "absolute",
         top: 0,
         left: 0,
-        bottom: -17,
-        right: -17,
-        overflow: "scroll",
-        WebkitOverflowScrolling: "touch",
+        bottom: 0,
+        right: 15, //-17,
+        overflow: "clip",
+        // WebkitOverflowScrolling: "touch",
         willChange: "transform",
         direction: "ltr",
         ...style,
       },
-      // children: <div style={{ height: "100%" }}></div>,
+
       children: (
-        <VariableSizeList
-          setRef={(ref) => {
-            // console.log(ref);
-            this.testRef = ref;
-          }}
-          outerRef={this.viewPort}
-          height={this.viewPort ? this.viewPort.clientHeight + 1 : 300} // want this to be only the view
-          width={"100%"}
-          itemCount={itemCount}
-          itemSize={getRowHeight}
-        >
-          {Row}
-        </VariableSizeList>
+        <div style={{ height: "100%", overflow: "clip" }}>
+          {children}
+          <div
+            style={{ width: 100, height: 55, backgroundColor: "blue" }}
+          ></div>
+        </div>
       ),
+      // children,
     });
 
     return createElement(
@@ -961,11 +976,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
               this.trackHorizontal = ref;
             },
           },
-          cloneElement(renderThumbHorizontal({ style: thumbHorizontalStyleDefault }), {
-            ref: (ref: HTMLElement) => {
-              this.thumbHorizontal = ref;
-            },
-          })
+          cloneElement(
+            renderThumbHorizontal({ style: thumbHorizontalStyleDefault }),
+            {
+              ref: (ref: HTMLElement) => {
+                this.thumbHorizontal = ref;
+              },
+            }
+          )
         ),
         cloneElement(
           renderTrackVertical({ style: trackVerticalStyle }),
@@ -975,11 +993,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
               this.trackVertical = ref;
             },
           },
-          cloneElement(renderThumbVertical({ style: thumbVerticalStyleDefault }), {
-            ref: (ref: HTMLElement) => {
-              this.thumbVertical = ref;
-            },
-          })
+          cloneElement(
+            renderThumbVertical({ style: thumbVerticalStyleDefault }),
+            {
+              ref: (ref: HTMLElement) => {
+                this.thumbVertical = ref;
+              },
+            }
+          )
         ),
       ]
     );
@@ -1002,8 +1023,8 @@ Scrollbar.defaultProps = {
   autoHeightMin: 0,
   autoHeightMax: 200,
   universal: false,
-  virtualizedScrollHeight: virtHeight,
 };
 
-export type ScrollbarProps = typeof Scrollbar.defaultProps & PropTypes.InferProps<typeof propTypes>;
+export type ScrollbarProps = typeof Scrollbar.defaultProps &
+  PropTypes.InferProps<typeof propTypes>;
 const rowHeights: Map<number, number> = new Map();

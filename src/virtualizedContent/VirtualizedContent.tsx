@@ -3,6 +3,7 @@ import { CSSProperties, FC } from "react";
 import VariableSizeList from "../virtualized-list/VariableSizeList";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scrollbar from "../scrollbar";
+import NoLimitList from "../no-limit-list/NoLimitList";
 
 const layoutStyle: CSSProperties = {
   display: "inline-block",
@@ -12,26 +13,14 @@ const layoutStyle: CSSProperties = {
 };
 
 const VirtualizedContent: FC = () => {
-  const Row = ({ index, style }: any) => <div style={style}>Row {index}</div>;
-
-  return (
-    <div style={layoutStyle}>
-      {/* <AutoSizer>
-        {{height, width} => { */}
-      <Scrollbar></Scrollbar>
-      {/* }}
-      </AutoSizer> */}
-
-      {/* <VariableSizeList
-        height={300}
-        width={"100%"}
-        itemCount={100}
-        itemSize={() => 35}
-      >
-        {Row}
-      </VariableSizeList> */}
-    </div>
-  );
+  return <NoLimitList />;
+  // (
+  //   <AutoSizer style={layoutStyle}>
+  //     {({ height, width }) => {
+  //       return <Scrollbar height={height} width={width}></Scrollbar>;
+  //     }}
+  //   </AutoSizer>
+  // );
 };
 
 export default VirtualizedContent;

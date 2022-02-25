@@ -48,7 +48,7 @@ export type Props<T> = {
   initialScrollOffset?: number;
   innerRef?: any;
   innerTagName?: string;
-  setRef?: (ref: IScrollable) => void;
+  // setRef?: (ref: IScrollable) => void;
   // deprecated
   itemCount: number;
   itemData: T;

@@ -37,7 +37,7 @@ export const viewStyleUniversalInitial: React.CSSProperties = {
 
 export const trackHorizontalStyleDefault: React.CSSProperties = {
   position: "absolute",
-  height: 6,
+  height: 0,
 };
 
 export const trackVerticalStyleDefault: React.CSSProperties = {

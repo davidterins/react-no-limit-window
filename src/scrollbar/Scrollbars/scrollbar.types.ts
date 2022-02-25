@@ -25,4 +25,7 @@ export const propTypes = {
   style: PropTypes.object,
   children: PropTypes.node,
   virtualizedScrollHeight: PropTypes.number,
+  scrollSpeed: PropTypes.number,
+  height: PropTypes.number,
+  width: PropTypes.number,
 };
