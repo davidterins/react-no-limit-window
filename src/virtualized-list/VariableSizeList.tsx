@@ -17,22 +17,23 @@ type InstanceProps = {
 
 const getItemMetadata = (
   props: Props<any>,
-  index: number,
+  itemIndex: number,
   instanceProps: InstanceProps
 ): ItemMetadata => {
   const { itemSize } = props as any as VariableSizeProps;
   const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
 
-  if (index > lastMeasuredIndex) {
+  if (itemIndex > lastMeasuredIndex) {
     let offset = 0;
 
     if (lastMeasuredIndex >= 0) {
-      const itemMetadata = itemMetadataMap[lastMeasuredIndex];
-      offset = itemMetadata.offset + itemMetadata.size;
+      const lastMeasuredItemMetadata = itemMetadataMap[lastMeasuredIndex];
+      offset = lastMeasuredItemMetadata.offset + lastMeasuredItemMetadata.size;
     }
 
-    for (let i = lastMeasuredIndex + 1; i <= index; i++) {
-      let size = (itemSize as any as itemSizeGetter)(i);
+    for (let i = lastMeasuredIndex + 1; i <= itemIndex; i++) {
+      let itemSizeGetter = itemSize as any as itemSizeGetter;
+      let size = itemSizeGetter(i);
       itemMetadataMap[i] = {
         offset,
         size,
@@ -40,10 +41,10 @@ const getItemMetadata = (
       offset += size;
     }
 
-    instanceProps.lastMeasuredIndex = index;
+    instanceProps.lastMeasuredIndex = itemIndex;
   }
 
-  return itemMetadataMap[index];
+  return itemMetadataMap[itemIndex];
 };
 
 const findNearestItem = (
@@ -51,6 +52,10 @@ const findNearestItem = (
   instanceProps: InstanceProps,
   offset: number
 ) => {
+  console.log("zz Props: ", props);
+  console.log("zz InstanceProps: ", instanceProps);
+  console.log("zz Offset: ", offset);
+
   const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
   const lastMeasuredItemOffset =
     lastMeasuredIndex > 0 ? itemMetadataMap[lastMeasuredIndex].offset : 0;
@@ -292,4 +297,5 @@ const VariableSizeList = createListComponent({
     }
   },
 });
+
 export default VariableSizeList;

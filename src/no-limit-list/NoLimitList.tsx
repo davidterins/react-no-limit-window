@@ -4,21 +4,24 @@ import { IScrollable } from "../virtualized-list/createListComponent";
 import VariableSizeList from "../virtualized-list/VariableSizeList";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-const itemCount = 100;
-const itemHeight = 35;
+const itemCount = 50000000;
+const itemHeight = 100;
 const virtHeight = itemCount * itemHeight;
 
 const layoutStyle: CSSProperties = {
   display: "inline-block",
   width: "100%",
-  height: 300,
+  height: 800,
   background: "gray",
 };
 
-interface NoLimitListProps {}
+interface NoLimitListProps {
+  style: CSSProperties;
+}
 
-const NoLimitList: React.FC<NoLimitListProps> = () => {
+const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   const listRef = useRef<any>();
+  // return <div>NO LIMIT WINDOW!</div>;
 
   const handleScroll = (
     clientHeight: number,
@@ -36,9 +39,13 @@ const NoLimitList: React.FC<NoLimitListProps> = () => {
   };
 
   return (
-    <AutoSizer style={layoutStyle}>
+    <AutoSizer style={props.style}>
       {({ height, width }) => {
-        const scrollSpeed = height / itemCount;
+        const rowHeight = 20;
+
+        if (itemCount > rowHeight) {
+        }
+        const scrollSpeed = (height / virtHeight) * rowHeight;
         return (
           <Scrollbar
             onScroll={handleScroll}
@@ -52,7 +59,7 @@ const NoLimitList: React.FC<NoLimitListProps> = () => {
               height={height}
               width={width}
               itemCount={itemCount}
-              itemSize={() => 35}
+              itemSize={() => itemHeight}
             >
               {Row}
             </VariableSizeList>
@@ -68,26 +75,44 @@ export default NoLimitList;
 const rowHeights: Map<number, number> = new Map();
 
 const Row = ({ index, style }: any) => {
-  // return <div style={{ ...style }}>Row {index}</div>;
+  const rowHeight = itemHeight;
+
   const rowRef = useRef<any>();
   // console.log("HERE CURRENT");
 
   const getRandomInt = (max) => {
     return Math.floor(Math.random() * max);
   };
-  const rowHeight = 35; // getRandomInt(230);
+  // const rowHeight = getRandomInt(230);
 
   useEffect(() => {
     if (rowRef.current) {
       // console.log("HERE CURRENT WOOT");
-      console.warn(rowRef.current.clientHeight);
-      // setRowHeight(index, rowRef.current.clientHeight);
+      setRowHeight(index, rowRef.current.clientHeight);
     }
   }, [rowRef]);
 
+  let rend = () => {
+    const sectionHeight = 20;
+    const numberOfSections = rowHeight / sectionHeight;
+    let divs = [];
+
+    for (let i = 1; i <= numberOfSections; i++) {
+      divs.push(i);
+    }
+
+    return divs.map((sectionNumber) => {
+      return (
+        <div style={{ height: sectionHeight }}>
+          Row: {index} Section: {sectionNumber}
+        </div>
+      );
+    });
+  };
+
   return (
     <div ref={rowRef} style={{ ...style, height: rowHeight }}>
-      Row {index}
+      {rend()}
     </div>
   );
 };
@@ -98,6 +123,8 @@ const setRowHeight = (index: number, height: number) => {
   } else {
     rowHeights[index] = height;
   }
+
+  // todo update virtheight
 };
 const getRowHeight = (index: number) => {
   if (rowHeights.has(index)) {

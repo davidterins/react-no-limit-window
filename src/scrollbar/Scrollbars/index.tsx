@@ -151,7 +151,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     this.handleVerticalThumbMouseDown =
       this.handleVerticalThumbMouseDown.bind(this);
     this.handleWindowResize = this.handleWindowResize.bind(this);
-    this.handleScroll = this.handleScroll.bind(this);
+    // this.handleScroll = this.handleScroll.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleDrag = this.handleDrag.bind(this);
     this.handleDragEnd = this.handleDragEnd.bind(this);
@@ -194,22 +194,6 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       clientWidth = 0,
       clientHeight = 0,
     } = this.viewPort || {};
-    console.log("FAKFAKESCROLL: " + this.fakeScrollTop);
-
-    const virtualizedScrollHeight = this.props.virtualizedScrollHeight;
-    const customScrollTop = Math.floor(this.fakeScrollTop);
-
-    // return {
-    //   left: scrollLeft / (scrollWidth - clientWidth) || 0,
-    //   top: customScrollTop / (virtualizedScrollHeight - clientHeight) || 0,
-    //   scrollLeft,
-    //   customScrollTop, // scroll top of custom scrollbar
-    //   scrollTop, // actual scroll top of div element
-    //   scrollWidth,
-    //   scrollHeight: virtualizedScrollHeight,
-    //   clientWidth,
-    //   clientHeight,
-    // };
 
     return {
       left: scrollLeft / (scrollWidth - clientWidth) || 0,
@@ -262,14 +246,8 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
   }
 
   handleWheel(args: Event) {
-    const k = args as WheelEvent;
-    // console.log(`Wheel
-    // deltaY: ${k.deltaY}
-    // deltamode: ${k.deltaMode}
-    // pageY: ${k.pageY}
-    // movemenyY: ${k.movementY}`);
-    let scrollDelta = k?.deltaY / 100;
-    //  < 0 ? true : false; //todo: make use of delta 100/200 etc for speed
+    const wheelEvent = args as WheelEvent;
+    let scrollDelta = wheelEvent?.deltaY / 100; // deltaY on chrome is either 100 or 200.
 
     this.update(scrollDelta, (updatedScrollArgs) => {
       const { nativeScrollStatus, customScrollStatus } = updatedScrollArgs;
@@ -296,10 +274,20 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
       // this.syncScrollStatus(customScrollTop, scrollTop);
 
+      const clampedScrollTop = this.clamp(
+        this.customScrollStatus.scrollTop,
+        0,
+        this.props.virtualizedScrollHeight - this.getThumbVerticalHeight()
+      );
+
+      if (clampedScrollTop == NaN) {
+        throw `Sroll top Nan`;
+      }
+
       this.props.onScroll(
         this.viewPort.clientHeight,
         this.props.virtualizedScrollHeight,
-        this.customScrollStatus.scrollTop
+        clampedScrollTop
       );
       // Add this to update child view.
       // (this.testRef as IScrollable).Scrolla(
@@ -326,7 +314,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       thumbVertical,
     } = this;
     view.addEventListener("mousewheel", this.handleWheel);
-    view.addEventListener("scroll", this.handleScroll);
+    // view.addEventListener("scroll", this.handleScroll);
     if (!getScrollbarWidth()) return;
     trackHorizontal.addEventListener("mouseenter", this.handleTrackMouseEnter);
     trackHorizontal.addEventListener("mouseleave", this.handleTrackMouseLeave);
@@ -362,7 +350,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       thumbVertical,
     } = this;
     view.removeEventListener("mousewheel", this.handleWheel);
-    view.removeEventListener("scroll", this.handleScroll);
+    // view.removeEventListener("scroll", this.handleScroll);
     if (!getScrollbarWidth()) return;
     trackHorizontal.removeEventListener(
       "mouseenter",
@@ -394,59 +382,6 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     // Possibly setup by `handleDragStart`
     this.teardownDragging();
   }
-
-  handleScroll(event: Event) {
-    return;
-    if (this.ignoreNextUpdate) {
-      this.ignoreNextUpdate = false;
-      return;
-    }
-
-    // console.log("Handling Scroll!!");
-    // const { onScroll, onScrollFrame } = this.props;
-    // if (onScroll) onScroll(event);
-
-    // this.update((updatedScrollArgs) => {
-    //   const { nativeScrollStatus, customScrollStatus } = updatedScrollArgs;
-
-    //   // const { customScrollTop, scrollLeft, scrollTop, scrollHeight } = values;
-    //   // this.viewScrollLeft = customScrollStatus;
-    //   this.viewScrollTop = customScrollStatus.scrollTop;
-
-    //   this.customScrollStatus = customScrollStatus;
-    //   this.nativeScrollStatus = nativeScrollStatus;
-
-    //   // this.nativeScrollStatus.scrollTop = scrollTop;
-
-    //   console.log("scrollheight: " + this.viewPort.scrollHeight);
-    //   console.log("height: " + this.viewPort.clientHeight);
-    //   console.log("offsetHeight: " + this.viewPort.offsetHeight);
-    //   // this.nativeScrollAtBottom =
-    //   //   this.nativeScrollTop + this.viewPort.clientHeight ==
-    //   //   this.viewPort.scrollHeight;
-
-    //   // console.log("BOTTOM: " + this.nativeScrollAtBottom);
-
-    //   // if(this.nativeScrollAtBottom && vie)
-
-    //   // this.syncScrollStatus(customScrollTop, scrollTop);
-
-    //   // // Add this to update child view.
-    //   // (this.testRef as IScrollable).Scrolla(
-    //   //   this.viewPort.clientHeight,
-    //   //   this.props.virtualizedScrollHeight,
-    //   //   this.customScrollStatus.scrollTop
-    //   // );
-
-    //   if (onScrollFrame) onScrollFrame(updatedScrollArgs);
-    // });
-
-    this.detectScrolling();
-  }
-
-  // nativeScrollTop: number;
-  // nativeScrollAtBottom: boolean;
-  // nativeScrollAtTop: boolean;
 
   scrollIsAtTop(scrollTop: number) {
     return scrollTop == 0;
@@ -564,25 +499,21 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       // this.viewPort.scrollTop = this.getRandom(); // this.getScrollTopForOffset(offset);
       this.fakeScrollTop = this.getScrollTopForOffset(offset);
       this.handleWheel(null);
-      this.forceTriggerNativeScrollEvent();
-
-      console.log("FAKESCROLLTOP: " + this.fakeScrollTop);
-      console.log("VIEWSCROLLTOP: " + this.viewPort.scrollTop);
     }
     return false;
   }
 
-  num: 0;
-  forceTriggerNativeScrollEvent = () => {
-    if (this.num == 0) {
-      this.num += 1;
-    } else {
-      this.num = 0;
-    }
-    // Setting scrollTop triggers native scroll event.
-    this.viewPort.scrollTop = this.num;
-    return this.num;
-  };
+  // num: 0;
+  // forceTriggerNativeScrollEvent = () => {
+  //   if (this.num == 0) {
+  //     this.num += 1;
+  //   } else {
+  //     this.num = 0;
+  //   }
+  //   // Setting scrollTop triggers native scroll event.
+  //   this.viewPort.scrollTop = this.num;
+  //   return this.num;
+  // };
 
   handleDragEnd() {
     this.dragging = false;
@@ -717,7 +648,6 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     } = this.getViewPortElementValues();
 
     // if (getScrollbarWidth() > 0) {
-    console.log("HAHAH");
     const trackHorizontalWidth = getInnerWidth(this.trackHorizontal);
     const thumbHorizontalWidth = this.getThumbHorizontalWidth();
     const thumbHorizontalX =
@@ -744,7 +674,6 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     const trackVerticalHeight = getInnerHeight(this.trackVertical);
     const thumbVerticalHeight = this.getThumbVerticalHeight();
     console.log("THUMBHEIGHT: " + thumbVerticalHeight);
-
     const thumbMinPos = 0;
     const thumbMaxPos = trackVerticalHeight - thumbVerticalHeight;
 
@@ -758,6 +687,8 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       thumbMaxPos
     );
 
+    console.log("ää vert pos clamp: ", thumbVerticalY);
+
     let customUpdateScrollInfo: ScrollInfo = {
       top: 0, //customScrollTop / (virtualizedScrollHeight - clientHeight) || 0,
       clientHeight: clientHeight,
@@ -768,11 +699,10 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     };
 
     console.log(JSON.stringify(customUpdateScrollInfo));
+    console.log("ää PRE-RAW: " + thumbVerticalPosRaw);
 
     // See handle drag.
     if (!this.dragging) {
-      console.log("PRE-RAW: " + thumbVerticalPosRaw);
-
       // add scroll delta
       let deltaScrollY =
         this.viewPort.scrollTop - this.nativeScrollStatus.scrollTop;
@@ -781,11 +711,10 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
       console.log("DELTA: " + deltaScrollY);
 
-      thumbVerticalPosRaw += this.props.scrollSpeed * dir;
-
-      console.log("POST-RAW: " + thumbVerticalPosRaw);
+      if (scrollDelta) {
+        thumbVerticalPosRaw += this.props.scrollSpeed * dir;
+      }
     }
-
     const finalThumbVerticalY = this.clamp(
       thumbVerticalPosRaw,
       thumbMinPos,
@@ -938,6 +867,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
         left: 0,
         bottom: 0,
         right: 15, //-17,
+        // overflow: "scroll",
         overflow: "clip",
         // WebkitOverflowScrolling: "touch",
         willChange: "transform",
@@ -945,14 +875,10 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
         ...style,
       },
 
-      children: (
-        <div style={{ height: "100%", overflow: "clip" }}>
-          {children}
-          <div
-            style={{ width: 100, height: 55, backgroundColor: "blue" }}
-          ></div>
-        </div>
-      ),
+      children: children,
+      // <div style={{ height: "100%", overflow: "clip" }}>
+      // { children },
+      // </div>
       // children,
     });
 

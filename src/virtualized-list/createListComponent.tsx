@@ -43,7 +43,14 @@ export interface IScrollable {
     scrollHeight: number,
     scrollTop: number
   ) => void;
+  ScrollToItem: (offset: number) => void;
 }
+
+type VisibilityState =
+  | "fully-visible"
+  | "start-cut"
+  | "end-cut"
+  | "two-way-cut";
 
 export default function createListComponent({
   getItemOffset,
@@ -106,8 +113,8 @@ export default function createListComponent({
       scrollHeight: number,
       scrollTop: number
     ) {
+      console.log(`zz Scrolla: ${clientHeight}, ${scrollHeight}, ${scrollTop}`);
       this._onScrollVertical(clientHeight, scrollHeight, scrollTop);
-      // console.log("hej");
     }
 
     static getDerivedStateFromProps<T>(
@@ -135,7 +142,7 @@ export default function createListComponent({
       }, this._resetIsScrollingDebounced);
     }
 
-    scrollToItem(index: number, align: ScrollToAlign = "auto"): void {
+    ScrollToItem(index: number, align: ScrollToAlign = "auto"): void {
       const { itemCount } = this.props;
       const { scrollOffset } = this.state;
       index = Math.max(0, Math.min(index, itemCount - 1));
@@ -217,7 +224,7 @@ export default function createListComponent({
 
     render() {
       const {
-        children,
+        children: rowElement,
         className,
         direction,
         height,
@@ -232,7 +239,8 @@ export default function createListComponent({
         useIsScrolling,
         width,
       } = this.props;
-      const { isScrolling } = this.state;
+      const { isScrolling, scrollOffset } = this.state;
+      const viewPortHeight = (height as number) - 4;
       // TODO Deprecate direction "horizontal"
       const isHorizontal =
         direction === "horizontal" || layout === "horizontal";
@@ -246,30 +254,233 @@ export default function createListComponent({
 
       const items = [];
 
-      if (itemCount > 0) {
-        let totalRenderedHeight = 0;
-        for (let index = startIndex; index <= stopIndex; index++) {
-          const listItemStyle: CSSProperties = this._getItemStyle(index);
-          totalRenderedHeight += listItemStyle.height as number;
-          // console.warn(listItemStyle.height);
-          const listItem = createElement(children, {
-            data: itemData,
-            key: itemKey(index, itemData),
-            index,
-            isScrolling: useIsScrolling ? isScrolling : undefined,
-            style: listItemStyle,
-          });
+      const visiblityStates: {
+        index: number;
+        style: CSSProperties;
+        visibleState: VisibilityState;
+        projectedStyle: {
+          top: number;
+          scrollTop: number;
+          height: number;
+        };
+      }[] = [];
 
-          items.push(listItem);
-          if (index == itemCount - 1) {
-            if (totalRenderedHeight > height) {
-              // remove the first element of array
-              items.shift();
-              console.warn(totalRenderedHeight);
-            }
+      if (itemCount > 0) {
+        for (let index = startIndex; index <= stopIndex; index++) {
+          console.log(index);
+          const listItemStyle: CSSProperties = this._getItemStyle(index);
+
+          const viewPortStopPixel = scrollOffset + (height as number);
+          console.warn(
+            `fx Projected pixels within viewport ${scrollOffset} -> ${viewPortStopPixel}`
+          );
+
+          const listItemStart = listItemStyle.top as number;
+          const listItemHeight = listItemStyle.height as number;
+          const listItemEnd = listItemStart + listItemHeight;
+
+          const startsBeforeViewport = listItemStart < scrollOffset;
+          const endsAfterViewPort = listItemEnd > viewPortStopPixel;
+          const withinViewPort = !startsBeforeViewport && !endsAfterViewPort;
+
+          const previousRowData = visiblityStates.find(
+            (item) => item.index == index - 1
+          );
+
+          if (startsBeforeViewport && !endsAfterViewPort) {
+            let projectedStyle = {
+              top: 0,
+              scrollTop: scrollOffset - listItemStart,
+              height: listItemEnd - scrollOffset,
+            };
+
+            // Item starts before viewport but ends within.
+            visiblityStates.push({
+              index,
+              style: listItemStyle,
+              visibleState: "start-cut",
+              projectedStyle: projectedStyle,
+            });
+
+            console.log(
+              `fx ${index} item ${listItemStart} starts before viewport, but ends ${listItemEnd} within`
+            );
+          } else if (withinViewPort) {
+            // ok good, item is fully rendered within viewport
+
+            let projectedStyle = {
+              top: previousRowData
+                ? previousRowData.projectedStyle.top +
+                  previousRowData.projectedStyle.height
+                : 0, // this should be previous rows end value
+              scrollTop: 0,
+              height: listItemHeight,
+            };
+
+            visiblityStates.push({
+              index,
+              style: listItemStyle,
+              visibleState: "fully-visible",
+              projectedStyle: projectedStyle,
+            });
+          } else if (!startsBeforeViewport && endsAfterViewPort) {
+            // Item start is visible in viewport but ends after.
+            let projectedStyle = {
+              top: previousRowData
+                ? previousRowData.projectedStyle.top +
+                  previousRowData.projectedStyle.height
+                : 0, // this should be previous rows end value
+              scrollTop: 0,
+              height: scrollOffset + viewPortHeight - listItemStart,
+            };
+
+            visiblityStates.push({
+              index,
+              style: listItemStyle,
+              visibleState: "end-cut",
+              projectedStyle,
+            });
+            console.log(
+              `fx ${index} item ${listItemStart} start is visible, but ends ${listItemEnd} after`
+            );
+          } else {
+            // Neither items start or end is visible in viewport.
+            let projectedStyle = {
+              top: 0,
+              scrollTop: scrollOffset - listItemStart,
+              height: listItemEnd - scrollOffset,
+            };
+
+            visiblityStates.push({
+              index,
+              style: listItemStyle,
+              visibleState: "two-way-cut",
+              projectedStyle,
+            });
+            console.log(
+              `fx ${index} neither item's ${listItemStart} start or end ${listItemEnd} is visible in viewport.`
+            );
           }
         }
       }
+
+      console.warn("visibility states: ", visiblityStates);
+
+      visiblityStates.forEach((item) => {
+        const listItemStart = item.style.top as number;
+
+        switch (item.visibleState) {
+          case "fully-visible": {
+            let li = createElement(rowElement, {
+              data: itemData,
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: { ...item.style, ...item.projectedStyle },
+            });
+
+            items.push(li);
+            break;
+          }
+          case "start-cut": {
+            let li = createElement(rowElement, {
+              data: itemData,
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: { ...item.style, position: "relative", top: 0 },
+            });
+
+            const listItemProjection = createElement("div", {
+              id: "start-cut-projected-li",
+              data: itemData,
+              ref: (ref: Element) => {
+                console.error(ref);
+                if (ref) {
+                  ref.scrollTop = scrollOffset - listItemStart;
+                }
+              },
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: {
+                ...item.style,
+                ...item.projectedStyle,
+                overflow: "hidden",
+              },
+              children: li,
+            });
+
+            items.push(listItemProjection);
+            break;
+          }
+          case "end-cut":
+            let li = createElement(rowElement, {
+              data: itemData,
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: { ...item.style, position: "relative", top: 0 },
+            });
+
+            const listItemProjection = createElement("div", {
+              id: "end-cut-projected-li",
+              data: itemData,
+              ref: (ref: Element) => {
+                console.error(ref);
+                if (ref) {
+                  ref.scrollTop = 0;
+                }
+              },
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: {
+                ...item.style,
+                ...item.projectedStyle,
+                overflow: "hidden",
+              },
+              children: li,
+            });
+
+            items.push(listItemProjection);
+            break;
+          case "two-way-cut": {
+            let li = createElement(rowElement, {
+              data: itemData,
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: { ...item.style, position: "relative", top: 0 },
+            });
+
+            const listItemProjection = createElement("div", {
+              id: "start-cut-projected-li",
+              data: itemData,
+              ref: (ref: Element) => {
+                console.error(ref);
+                if (ref) {
+                  ref.scrollTop = scrollOffset - listItemStart;
+                }
+              },
+              key: itemKey(item.index, itemData),
+              index: item.index,
+              isScrolling: useIsScrolling ? isScrolling : undefined,
+              style: {
+                ...item.style,
+                ...item.projectedStyle,
+                overflow: "hidden",
+              },
+              children: li,
+            });
+
+            items.push(listItemProjection);
+            break;
+          }
+          default:
+            break;
+        }
+      });
 
       // Read this value AFTER items have been created,
       // So their actual sizes (if variable) are taken into consideration.
@@ -278,16 +489,17 @@ export default function createListComponent({
         this._instanceProps
       );
 
-      let virtualizedItemsContainer = createElement(innerTagName || "div", {
+      let containerStyle: CSSProperties = {
+        height: "100%",
+        pointerEvents: isScrolling ? "none" : undefined,
+        width: isHorizontal ? estimatedTotalSize : "100%",
+      };
+
+      let virtualizedItemsContainer = createElement("div", {
         id: "virtualized-items-container",
         children: items,
         ref: innerRef,
-        style: {
-          height: "100%",
-          overflow: "clip",
-          pointerEvents: isScrolling ? "none" : undefined,
-          width: isHorizontal ? estimatedTotalSize : "100%",
-        },
+        style: containerStyle,
       });
 
       return virtualizedItemsContainer;
@@ -375,17 +587,21 @@ export default function createListComponent({
       } else {
         const offset = getItemOffset(this.props, index, this._instanceProps);
         const size = getItemSize(this.props, index, this._instanceProps);
+
         // TODO Deprecate direction "horizontal"
         const isHorizontal =
           direction === "horizontal" || layout === "horizontal";
+
         const isRtl = direction === "rtl";
         const offsetHorizontal = isHorizontal ? offset : 0;
+
+        // Update item style cache
         itemStyleCache[index] = style = {
-          position: "relative",
-          // position: "absolute",
-          // left: isRtl ? undefined : offsetHorizontal,
-          // right: isRtl ? offsetHorizontal : undefined,
-          // top: !isHorizontal ? offset : 0,
+          position: "absolute",
+          left: isRtl ? undefined : offsetHorizontal,
+          right: isRtl ? offsetHorizontal : undefined,
+          top: !isHorizontal ? offset : 0,
+          // position: "relative",
           height: !isHorizontal ? size : "100%",
           width: isHorizontal ? size : "100%",
         };
