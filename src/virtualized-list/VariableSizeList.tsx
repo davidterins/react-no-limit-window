@@ -47,28 +47,14 @@ const getItemMetadata = (
   return itemMetadataMap[itemIndex];
 };
 
-const findNearestItem = (
-  props: Props<any>,
-  instanceProps: InstanceProps,
-  offset: number
-) => {
-  console.log("zz Props: ", props);
-  console.log("zz InstanceProps: ", instanceProps);
-  console.log("zz Offset: ", offset);
-
+const findNearestItem = (props: Props<any>, instanceProps: InstanceProps, offset: number) => {
   const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
   const lastMeasuredItemOffset =
     lastMeasuredIndex > 0 ? itemMetadataMap[lastMeasuredIndex].offset : 0;
 
   if (lastMeasuredItemOffset >= offset) {
     // If we've already measured items within this range just use a binary search as it's faster.
-    return findNearestItemBinarySearch(
-      props,
-      instanceProps,
-      lastMeasuredIndex,
-      0,
-      offset
-    );
+    return findNearestItemBinarySearch(props, instanceProps, lastMeasuredIndex, 0, offset);
   } else {
     // If we haven't yet measured this high, fallback to an exponential search with an inner binary search.
     // The exponential search avoids pre-computing sizes for the full set of items as a binary search would.
@@ -118,10 +104,7 @@ const findNearestItemExponentialSearch = (
   const { itemCount } = props;
   let interval = 1;
 
-  while (
-    index < itemCount &&
-    getItemMetadata(props, index, instanceProps).offset < offset
-  ) {
+  while (index < itemCount && getItemMetadata(props, index, instanceProps).offset < offset) {
     index += interval;
     interval *= 2;
   }
@@ -158,16 +141,10 @@ const getEstimatedTotalSize = (
 };
 
 const VariableSizeList = createListComponent({
-  getItemOffset: (
-    props: Props<any>,
-    index: number,
-    instanceProps: InstanceProps
-  ): number => getItemMetadata(props, index, instanceProps).offset,
-  getItemSize: (
-    props: Props<any>,
-    index: number,
-    instanceProps: InstanceProps
-  ): number => instanceProps.itemMetadataMap[index].size,
+  getItemOffset: (props: Props<any>, index: number, instanceProps: InstanceProps): number =>
+    getItemMetadata(props, index, instanceProps).offset,
+  getItemSize: (props: Props<any>, index: number, instanceProps: InstanceProps): number =>
+    instanceProps.itemMetadataMap[index].size,
   getEstimatedTotalSize,
   getOffsetForIndexAndAlignment: (
     props: Props<any>,
@@ -184,20 +161,11 @@ const VariableSizeList = createListComponent({
     // Get estimated total size after ItemMetadata is computed,
     // To ensure it reflects actual measurements instead of just estimates.
     const estimatedTotalSize = getEstimatedTotalSize(props, instanceProps);
-    const maxOffset = Math.max(
-      0,
-      Math.min(estimatedTotalSize - size, itemMetadata.offset)
-    );
-    const minOffset = Math.max(
-      0,
-      itemMetadata.offset - size + itemMetadata.size
-    );
+    const maxOffset = Math.max(0, Math.min(estimatedTotalSize - size, itemMetadata.offset));
+    const minOffset = Math.max(0, itemMetadata.offset - size + itemMetadata.size);
 
     if (align === "smart") {
-      if (
-        scrollOffset >= minOffset - size &&
-        scrollOffset <= maxOffset + size
-      ) {
+      if (scrollOffset >= minOffset - size && scrollOffset <= maxOffset + size) {
         align = "auto";
       } else {
         align = "center";
@@ -261,14 +229,8 @@ const VariableSizeList = createListComponent({
       lastMeasuredIndex: -1,
     };
 
-    instance.resetAfterIndex = (
-      index: number,
-      shouldForceUpdate: boolean = true
-    ) => {
-      instanceProps.lastMeasuredIndex = Math.min(
-        instanceProps.lastMeasuredIndex,
-        index - 1
-      );
+    instance.resetAfterIndex = (index: number, shouldForceUpdate: boolean = true) => {
+      instanceProps.lastMeasuredIndex = Math.min(instanceProps.lastMeasuredIndex, index - 1);
 
       // We could potentially optimize further by only evicting styles after this index,
       // But since styles are only cached while scrolling is in progress-
