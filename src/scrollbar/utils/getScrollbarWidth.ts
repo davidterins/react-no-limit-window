@@ -22,7 +22,7 @@ export default function getScrollbarWidth() {
   } else {
     scrollbarWidth = 0;
   }
-  console.log("HERE! " + scrollbarWidth);
+  // console.log("HERE! " + scrollbarWidth);
 
   return scrollbarWidth || 0;
 }

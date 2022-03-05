@@ -261,14 +261,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
       // this.nativeScrollStatus.scrollTop = scrollTop;
 
-      console.log("scrollheight: " + this.viewPort.scrollHeight);
-      console.log("height: " + this.viewPort.clientHeight);
-      console.log("offsetHeight: " + this.viewPort.offsetHeight);
+      // console.log("scrollheight: " + this.viewPort.scrollHeight);
+      // console.log("height: " + this.viewPort.clientHeight);
+      // console.log("offsetHeight: " + this.viewPort.offsetHeight);
       // this.nativeScrollAtBottom =
       //   this.nativeScrollTop + this.viewPort.clientHeight ==
       //   this.viewPort.scrollHeight;
 
-      // console.log("BOTTOM: " + this.nativeScrollAtBottom);
+      // // console.log("BOTTOM: " + this.nativeScrollAtBottom);
 
       // if(this.nativeScrollAtBottom && vie)
 
@@ -491,10 +491,10 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       const clickPosition = thumbHeight - this.prevPageY;
       const offset = -trackTop + mouseDownYPos - clickPosition;
 
-      // console.log("trackTop: " + trackTop);
-      // console.log("mouseDownYPos: " + mouseDownYPos);
-      // console.log("clickPos: " + clickPosition);
-      // console.log("OFFSET: " + offset);
+      // // console.log("trackTop: " + trackTop);
+      // // console.log("mouseDownYPos: " + mouseDownYPos);
+      // // console.log("clickPos: " + clickPosition);
+      // // console.log("OFFSET: " + offset);
 
       // this.viewPort.scrollTop = this.getRandom(); // this.getScrollTopForOffset(offset);
       this.fakeScrollTop = this.getScrollTopForOffset(offset);
@@ -617,11 +617,11 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
     const thumbMaxPos = trackVerticalHeight - thumbVerticalHeight;
 
     let clampedScrollPos = this.clamp(customScrollTop, 0, thumbMaxPos);
-    console.log(`sks: ${clampedScrollPos}, ${thumbMaxPos}`);
+    // console.log(`sks: ${clampedScrollPos}, ${thumbMaxPos}`);
 
     let customAtBottom = clampedScrollPos == thumbMaxPos;
 
-    console.log(`native: ${nativeAtBottom}, custom: ${customAtBottom}`);
+    // console.log(`native: ${nativeAtBottom}, custom: ${customAtBottom}`);
   }
 
   scrollIsAtBottom(
@@ -666,14 +666,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       atTop: scrollTop == 0,
     };
 
-    console.log(JSON.stringify(nativeUpdatedScrollInfo));
+    // console.log(JSON.stringify(nativeUpdatedScrollInfo));
 
     const customScrollTop = Math.floor(this.fakeScrollTop);
 
     const virtualizedScrollHeight = this.props.virtualizedScrollHeight;
     const trackVerticalHeight = getInnerHeight(this.trackVertical);
     const thumbVerticalHeight = this.getThumbVerticalHeight();
-    console.log("THUMBHEIGHT: " + thumbVerticalHeight);
+    // console.log("THUMBHEIGHT: " + thumbVerticalHeight);
     const thumbMinPos = 0;
     const thumbMaxPos = trackVerticalHeight - thumbVerticalHeight;
 
@@ -687,7 +687,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       thumbMaxPos
     );
 
-    console.log("ää vert pos clamp: ", thumbVerticalY);
+    // console.log("ää vert pos clamp: ", thumbVerticalY);
 
     let customUpdateScrollInfo: ScrollInfo = {
       top: 0, //customScrollTop / (virtualizedScrollHeight - clientHeight) || 0,
@@ -698,8 +698,8 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
       atTop: customScrollTop == 0,
     };
 
-    console.log(JSON.stringify(customUpdateScrollInfo));
-    console.log("ää PRE-RAW: " + thumbVerticalPosRaw);
+    // console.log(JSON.stringify(customUpdateScrollInfo));
+    // console.log("ää PRE-RAW: " + thumbVerticalPosRaw);
 
     // See handle drag.
     if (!this.dragging) {
@@ -709,7 +709,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
       const dir = scrollDelta;
 
-      console.log("DELTA: " + deltaScrollY);
+      // console.log("DELTA: " + deltaScrollY);
 
       if (scrollDelta) {
         thumbVerticalPosRaw += this.props.scrollSpeed * dir;
@@ -729,7 +729,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> {
 
     this.fakeScrollTop = this.getScrollTopForOffset(finalThumbVerticalY);
 
-    console.log("Updated scroll pos: " + finalThumbVerticalY);
+    // console.log("Updated scroll pos: " + finalThumbVerticalY);
 
     let updateResult: ScrollUpdateArgs = {
       nativeScrollStatus: nativeUpdatedScrollInfo,

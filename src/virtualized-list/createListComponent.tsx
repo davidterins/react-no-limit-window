@@ -96,7 +96,7 @@ export default function createListComponent({
     }
 
     public Scrolla(clientHeight: number, scrollHeight: number, scrollTop: number) {
-      console.log(`zz Scrolla: ${clientHeight}, ${scrollHeight}, ${scrollTop}`);
+      // console.log(`zz Scrolla: ${clientHeight}, ${scrollHeight}, ${scrollTop}`);
       this._onScrollVertical(clientHeight, scrollHeight, scrollTop);
     }
 
@@ -135,7 +135,7 @@ export default function createListComponent({
 
     componentDidMount() {
       const { direction, initialScrollOffset, layout } = this.props;
-      console.log("HEREEE " + this.props.outerRef);
+      // console.log("HEREEE " + this.props.outerRef);
 
       if (typeof initialScrollOffset === "number" && this.props.outerRef != null) {
         const outerRef = this._outerRef as any as HTMLElement;
@@ -220,7 +220,7 @@ export default function createListComponent({
 
       const [startIndex, stopIndex] = this._getRangeToRender();
 
-      console.log(`Range to render: ${startIndex} -> ${stopIndex}`);
+      // console.log(`Range to render: ${startIndex} -> ${stopIndex}`);
 
       const items = [];
 
@@ -237,13 +237,13 @@ export default function createListComponent({
 
       if (itemCount > 0) {
         for (let index = startIndex; index <= stopIndex; index++) {
-          console.log(index);
+          // console.log(index);
           const listItemStyle: CSSProperties = this._getItemStyle(index);
 
           const viewPortStopPixel = scrollOffset + (height as number);
-          console.warn(
-            `fx Projected pixels within viewport ${scrollOffset} -> ${viewPortStopPixel}`
-          );
+          // console.warn(
+          //   `fx Projected pixels within viewport ${scrollOffset} -> ${viewPortStopPixel}`
+          // );
 
           const listItemStart = listItemStyle.top as number;
           const listItemHeight = listItemStyle.height as number;
@@ -270,9 +270,9 @@ export default function createListComponent({
               projectedStyle: projectedStyle,
             });
 
-            console.log(
-              `fx ${index} item ${listItemStart} starts before viewport, but ends ${listItemEnd} within`
-            );
+            // console.log(
+            //   `fx ${index} item ${listItemStart} starts before viewport, but ends ${listItemEnd} within`
+            // );
           } else if (withinViewPort) {
             // ok good, item is fully rendered within viewport
 
@@ -306,9 +306,9 @@ export default function createListComponent({
               visibleState: "end-cut",
               projectedStyle,
             });
-            console.log(
-              `fx ${index} item ${listItemStart} start is visible, but ends ${listItemEnd} after`
-            );
+            // console.log(
+            //   `fx ${index} item ${listItemStart} start is visible, but ends ${listItemEnd} after`
+            // );
           } else {
             // Neither items start or end is visible in viewport.
             let projectedStyle = {
@@ -323,14 +323,14 @@ export default function createListComponent({
               visibleState: "two-way-cut",
               projectedStyle,
             });
-            console.log(
-              `fx ${index} neither item's ${listItemStart} start or end ${listItemEnd} is visible in viewport.`
-            );
+            // console.log(
+            //   `fx ${index} neither item's ${listItemStart} start or end ${listItemEnd} is visible in viewport.`
+            // );
           }
         }
       }
 
-      console.warn("visibility states: ", visiblityStates);
+      // console.warn("visibility states: ", visiblityStates);
 
       visiblityStates.forEach((item) => {
         const listItemStart = item.style.top as number;
@@ -361,7 +361,7 @@ export default function createListComponent({
               id: "start-cut-projected-li",
               data: itemData,
               ref: (ref: Element) => {
-                console.error(ref);
+                // console.error(ref);
                 if (ref) {
                   ref.scrollTop = scrollOffset - listItemStart;
                 }
@@ -393,7 +393,7 @@ export default function createListComponent({
               id: "end-cut-projected-li",
               data: itemData,
               ref: (ref: Element) => {
-                console.error(ref);
+                // console.error(ref);
                 if (ref) {
                   ref.scrollTop = 0;
                 }
@@ -424,7 +424,7 @@ export default function createListComponent({
               id: "start-cut-projected-li",
               data: itemData,
               ref: (ref: Element) => {
-                console.error(ref);
+                // console.error(ref);
                 if (ref) {
                   ref.scrollTop = scrollOffset - listItemStart;
                 }
@@ -644,11 +644,11 @@ export default function createListComponent({
           return null;
         }
 
-        console.log("ON_SCROLL_VERTICAL_SETTING_STATE");
+        // console.log("ON_SCROLL_VERTICAL_SETTING_STATE");
         // Prevent Safari's elastic scrolling from causing visual shaking when scrolling past bounds.
         const scrollOffset = Math.max(0, Math.min(scrollTop, scrollHeight - clientHeight));
 
-        console.log({ clientHeight, scrollHeight, scrollTop, scrollOffset });
+        // console.log({ clientHeight, scrollHeight, scrollTop, scrollOffset });
 
         return {
           isScrolling: true,
