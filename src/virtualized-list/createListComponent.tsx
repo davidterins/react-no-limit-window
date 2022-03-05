@@ -241,13 +241,12 @@ export default function createListComponent({
           const listItemStyle: CSSProperties = this._getItemStyle(index);
 
           const viewPortStopPixel = scrollOffset + (height as number);
-          // console.warn(
-          //   `fx Projected pixels within viewport ${scrollOffset} -> ${viewPortStopPixel}`
-          // );
-
           const listItemStart = listItemStyle.top as number;
           const listItemHeight = listItemStyle.height as number;
           const listItemEnd = listItemStart + listItemHeight;
+                    // console.warn(
+          //   `fx Projected pixels within viewport ${scrollOffset} -> ${viewPortStopPixel}`
+          // );
 
           const startsBeforeViewport = listItemStart < scrollOffset;
           const endsAfterViewPort = listItemEnd > viewPortStopPixel;

@@ -23,6 +23,7 @@ interface NoLimitListProps {
   onItemsRendered?: onItemsRenderedCallback;
   getItemHeight: (index: number) => number;
   ref?: (ref: any) => void;
+  setRef?: (ref: any) => void;
   children: RenderComponent<any>;
 }
 
@@ -32,6 +33,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   const virtualizedHeight = itemCount * defaultItemHeight;
 
   const listRef = useRef();
+  const virtualizingContainerRef = useRef();
 
   const handleScroll = (
     clientHeight: number,
@@ -56,9 +58,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   };
 
   useEffect(() => {
-    if (props.ref) {
-      props.ref(listRef);
-    }
+    props.setRef(listRef);
   }, []);
 
   return (
@@ -75,6 +75,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
           >
             <VariableSizeList
               ref={listRef}
+              innerRef={virtualizingContainerRef}
               height={height}
               width={width}
               itemCount={itemCount}

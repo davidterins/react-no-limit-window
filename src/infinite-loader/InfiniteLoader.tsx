@@ -1,4 +1,4 @@
-import { PureComponent } from "react";
+import { Component, PureComponent } from "react";
 import isInteger from "./isInteger";
 import isRangeVisible from "./isRangeVisible";
 import scanForUnloadedRanges from "./scanForUnloadedRanges";
@@ -10,6 +10,7 @@ type onItemsRenderedParams = {
 };
 type onItemsRendered = (params: onItemsRenderedParams) => void;
 type setRef = (ref: any) => void;
+
 export type Props = {
   // Render prop.
   children: (arg0: {
@@ -91,6 +92,7 @@ export default class InfiniteLoader extends PureComponent<Props> {
     this._ensureRowsLoaded(visibleStartIndex, visibleStopIndex);
   };
   _setRef: setRef = (listRef: any) => {
+    console.log("SETTING LISTREF", listRef);
     this._listRef = listRef;
   };
 
@@ -127,44 +129,49 @@ export default class InfiniteLoader extends PureComponent<Props> {
     // loadMoreRows was renamed to loadMoreItems in v1.0.3; will be removed in v2.0
     const loadMoreItems = this.props.loadMoreItems || this.props.loadMoreRows;
 
+    // console.log("LISTREF", this._listRef);
+
     for (let i = 0; i < unloadedRanges.length; i += 2) {
       const startIndex = unloadedRanges[i];
       const stopIndex = unloadedRanges[i + 1];
+
       const promise = loadMoreItems(startIndex, stopIndex);
 
       if (promise != null) {
-        promise.then(() => {
-          // Refresh the visible rows if any of them have just been loaded.
-          // Otherwise they will remain in their unloaded visual state.
-          if (
-            isRangeVisible({
-              lastRenderedStartIndex: this._lastRenderedStartIndex,
-              lastRenderedStopIndex: this._lastRenderedStopIndex,
-              startIndex,
-              stopIndex,
-            })
-          ) {
-            // Handle an unmount while promises are still in flight.
-            if (this._listRef == null) {
-              return;
-            }
-
-            // Resize cached row sizes for VariableSizeList,
-            // otherwise just re-render the list.
-            if (typeof this._listRef.resetAfterIndex === "function") {
-              this._listRef.resetAfterIndex(startIndex, true);
-            } else {
-              // HACK reset temporarily cached item styles to force PureComponent to re-render.
-              // This is pretty gross, but I'm okay with it for now.
-              // Don't judge me.
-              if (typeof this._listRef._getItemStyleCache === "function") {
-                this._listRef._getItemStyleCache(-1);
+        promise
+          .then(() => {
+            // Refresh the visible rows if any of them have just been loaded.
+            // Otherwise they will remain in their unloaded visual state.
+            if (
+              isRangeVisible({
+                lastRenderedStartIndex: this._lastRenderedStartIndex,
+                lastRenderedStopIndex: this._lastRenderedStopIndex,
+                startIndex,
+                stopIndex,
+              })
+            ) {
+              // Handle an unmount while promises are still in flight.
+              if (this._listRef?.current == null) {
+                return;
               }
 
-              this._listRef.forceUpdate();
+              // Resize cached row sizes for VariableSizeList,
+              // otherwise just re-render the list.
+              if (typeof this._listRef.resetAfterIndex === "function") {
+                console.log("index");
+                this._listRef.current.resetAfterIndex(startIndex, true);
+              } else {
+                // HACK reset temporarily cached item styles to force PureComponent to re-render.
+                // This is pretty gross, but I'm okay with it for now.
+                // Don't judge me.
+                if (typeof this._listRef._getItemStyleCache === "function") {
+                  this._listRef.current._getItemStyleCache(-1);
+                }
+                this._listRef.current.forceUpdate();
+              }
             }
-          }
-        });
+          })
+          .catch((e) => {});
       }
     }
   }

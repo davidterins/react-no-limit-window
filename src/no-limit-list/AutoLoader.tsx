@@ -1,8 +1,9 @@
 import * as React from "react";
-import { CSSProperties } from "react";
-import InfiniteLoader from "react-window-infinite-loader";
+import { CSSProperties, useEffect } from "react";
+import InfiniteLoader from "../infinite-loader";
 import { NoLimitList } from "..";
 import { IPageCollection } from "../paging/PageCollection";
+import { getRowHeight, Row } from "./Row";
 
 const listStyle: CSSProperties = {
   display: "inline-block",
@@ -41,8 +42,7 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
         break;
       case "loaded":
         let item = pageCollection.getItem(index);
-        content = `Loaded...${item.content}`;
-        break;
+        return Row({ index, style }, 100);
       default:
         break;
     }
@@ -73,8 +73,8 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
           itemCount={itemCount}
           defaultItemHeight={100}
           onItemsRendered={onItemsRendered}
-          getItemHeight={() => 100}
-          ref={ref}
+          getItemHeight={getRowHeight}
+          setRef={ref}
         >
           {(args) => RenderItem(args, 100)}
         </NoLimitList>
