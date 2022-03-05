@@ -4,3 +4,6 @@
 [submodule "react-custom-scrollbars"]
 	path = react-custom-scrollbars
 	url = https://github.com/davidterins/react-custom-scrollbars.git
+[submodule "react-window-infinite-loader"]
+	path = react-window-infinite-loader
+	url = https://github.com/bvaughn/react-window-infinite-loader.git
