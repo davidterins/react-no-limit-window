@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CSSProperties, FC } from "react";
 import NoLimitList from "../no-limit-list/NoLimitList";
+import { Row } from "../no-limit-list/Row";
 
 const listStyle: CSSProperties = {
   display: "inline-block",
@@ -16,7 +17,9 @@ const VirtualizedContent: FC = () => {
       defaultItemHeight={100}
       getItemHeight={(index) => 100}
       style={listStyle}
-    />
+    >
+      {(args) => Row(args, 100)}
+    </NoLimitList>
   );
 };
 

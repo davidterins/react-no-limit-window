@@ -1,9 +1,17 @@
-import React, { CSSProperties, useEffect, useRef } from "react";
+import React, {
+  CSSProperties,
+  MutableRefObject,
+  useEffect,
+  useRef,
+} from "react";
 import Scrollbar from "../scrollbar";
 import { IScrollable } from "../virtualized-list/createListComponent";
 import VariableSizeList from "../virtualized-list/VariableSizeList";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { onItemsRenderedCallback, RenderComponent } from "../virtualized-list/listComponent.types";
+import {
+  onItemsRenderedCallback,
+  RenderComponent,
+} from "../virtualized-list/listComponent.types";
 import { Row } from "./Row";
 
 const rowHeight = 20;
@@ -14,14 +22,16 @@ interface NoLimitListProps {
   defaultItemHeight: number;
   onItemsRendered?: onItemsRenderedCallback;
   getItemHeight: (index: number) => number;
+  ref?: (ref: any) => void;
+  children: RenderComponent<any>;
 }
 
 const NoLimitList: React.FC<NoLimitListProps> = (props) => {
-  const { style, itemCount, defaultItemHeight } = props;
+  const { style, itemCount, defaultItemHeight, children } = props;
 
   const virtualizedHeight = itemCount * defaultItemHeight;
 
-  const listRef = useRef<any>();
+  const listRef = useRef();
 
   const handleScroll = (
     clientHeight: number,
@@ -45,6 +55,12 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     }
   };
 
+  useEffect(() => {
+    if (props.ref) {
+      props.ref(listRef);
+    }
+  }, []);
+
   return (
     <AutoSizer style={style}>
       {({ height, width }) => {
@@ -65,7 +81,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
               itemSize={props.getItemHeight}
               onItemsRendered={handleItemsRendered}
             >
-              {(args) => Row(args, defaultItemHeight)}
+              {children}
             </VariableSizeList>
           </Scrollbar>
         );
