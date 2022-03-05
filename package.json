@@ -43,7 +43,6 @@
     "@types/styled-components": "^5.1.22",
     "babel-loader": "^8.2.3",
     "lorem-ipsum": "^2.0.4",
-    "react-window-infinite-loader": "^1.0.7",
     "rollup": "^2.67.2",
     "rollup-plugin-dts": "^4.1.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
