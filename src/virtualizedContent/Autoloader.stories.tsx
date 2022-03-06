@@ -12,14 +12,18 @@ export default {
   argTypes: {},
 } as Meta<typeof AutoLoaderList>;
 
+const pageCollection = new PageCollection();
+const itemCount = 1000000;
+
 const Template: Story = (args) => (
-  <AutoLoaderList pageCollection={pageCollection} itemCount={100} {...(args as AutoLoaderListProps)} />
+  <AutoLoaderList
+    pageCollection={pageCollection}
+    itemCount={itemCount}
+    {...(args as AutoLoaderListProps)}
+  />
 );
 
 export const Primary = Template.bind({});
-
-const pageCollection = new PageCollection();
-const itemCount = 1000;
 
 Primary.args = {
   pageCollection: pageCollection,

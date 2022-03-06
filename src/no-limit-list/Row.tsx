@@ -1,7 +1,8 @@
 import * as React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CSSProperties } from "styled-components";
 import { loremIpsum } from "lorem-ipsum";
+// import measureElement from "../hidden-element/MeasureElement";
 
 interface RowProps {
   index: number;
@@ -9,24 +10,23 @@ interface RowProps {
 }
 
 const Row = ({ index, style }: any, itemHeight: number) => {
-  const rowRef = useRef<any>();
+  // const rowRef = useRef<any>();
 
   const getRandomInt = (max) => {
     return Math.floor(Math.random() * max);
   };
 
-  useEffect(() => {
-    if (rowRef.current) {
-      if (!rowHeights.has(index)) {
-        console.log(
-          `Setting Row height ${index}: `,
-          rowRef.current.clientHeight
-        );
+  // useEffect(() => {
+  //   if (rowRef.current) {
+  //     // if (!rowHeights.has(index)) {
+  //     console.log(`Setting Row height ${index}: `, rowRef.current.clientHeight);
 
-        setRowHeight(index, rowRef.current.clientHeight);
-      }
-    }
-  }, [rowRef]);
+  //     let renderedHeight = rowRef.current.clientHeight;
+
+  //     setRowHeight(index, renderedHeight);
+  //     // }
+  //   }
+  // }, [rowRef]);
 
   // let rend = () => {
   //   // let randomHeight = getRandomInt(350);
@@ -52,21 +52,17 @@ const Row = ({ index, style }: any, itemHeight: number) => {
   //   });
   // };
 
-  let cachedRowHeight = getRowHeight(index);
+  // let cachedRowHeight = getRowHeight(index);
   let words = getWords(index);
 
   return (
     <div
-      ref={rowRef}
       style={{
         ...style,
-        height: cachedRowHeight,
+        border: "solid red 1px",
       }}
     >
-      <div>
-        Row: {index} {words}
-        {/* {rend()} */}
-      </div>
+      Row: {index} {words}
     </div>
   );
 };
@@ -92,10 +88,13 @@ const getWords = (index: number) => {
 };
 
 const getRowHeight = (index: number) => {
+  // console.log("index -> RowHeights", index, rowHeights, rowHeights.has(index));
+
   if (rowHeights.has(index)) {
-    return rowHeights[index];
+    return rowHeights.get(index);
   }
+
   return 100;
 };
 
-export { getRowHeight };
+// export { getRowHeight };

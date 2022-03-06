@@ -15,7 +15,7 @@ const VirtualizedContent: FC = () => {
     <NoLimitList
       itemCount={100}
       defaultItemHeight={100}
-      getItemHeight={(index) => 100}
+      // getItemHeight={(index) => 100}
       style={listStyle}
     >
       {(args) => Row(args, 100)}

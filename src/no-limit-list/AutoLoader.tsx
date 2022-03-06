@@ -3,12 +3,14 @@ import { CSSProperties, useEffect } from "react";
 import InfiniteLoader from "../infinite-loader";
 import { NoLimitList } from "..";
 import { IPageCollection } from "../paging/PageCollection";
-import { getRowHeight, Row } from "./Row";
+import { Row } from "./Row";
+import { propTypes } from "../scrollbar/Scrollbars/scrollbar.types";
+// import { getMeasureLayer } from "../hidden-element/MeasureElement";
 
 const listStyle: CSSProperties = {
   display: "inline-block",
   width: "100%",
-  height: 400,
+  height: "1200px",
   background: "gray",
 };
 
@@ -72,8 +74,9 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
           style={listStyle}
           itemCount={itemCount}
           defaultItemHeight={100}
+          shouldItemBeMeasured={isItemLo}
           onItemsRendered={onItemsRendered}
-          getItemHeight={getRowHeight}
+          // getItemHeight={(index) => getRowHeight(index)}
           setRef={ref}
         >
           {(args) => RenderItem(args, 100)}
