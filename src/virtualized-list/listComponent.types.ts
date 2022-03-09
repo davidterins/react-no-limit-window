@@ -2,7 +2,10 @@ import { $Shape } from "utility-types";
 import { IScrollable } from "./createListComponent";
 
 export type ScrollToAlign = "auto" | "smart" | "center" | "start" | "end";
-export type itemSize = number | ((index: number) => number);
+export type itemSize =
+  | number
+  | ((index: number) => number)
+  | ((index: number) => { size: number; loaded: boolean });
 // TODO Deprecate directions "horizontal" and "vertical"
 export type Direction = "ltr" | "rtl" | "horizontal" | "vertical";
 export type Layout = "horizontal" | "vertical";

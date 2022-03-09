@@ -13,7 +13,7 @@ export default {
 } as Meta<typeof AutoLoaderList>;
 
 const pageCollection = new PageCollection();
-const itemCount = 1000000;
+const itemCount = 100;
 
 const Template: Story = (args) => (
   <AutoLoaderList

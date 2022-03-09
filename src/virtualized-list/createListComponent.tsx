@@ -249,8 +249,8 @@ export default function createListComponent({
         : this._onScrollVertical;
 
       const [startIndex, stopIndex] = this._getRangeToRender();
-
-      // console.log(`Range to render: ${startIndex} -> ${stopIndex}`);
+      // console.log("List instance props", this._instanceProps);
+      console.log(`Range to render: ${startIndex} -> ${stopIndex}`);
 
       const items = [];
 
@@ -576,14 +576,15 @@ export default function createListComponent({
       // console.log("ItemSize", itemSize);
 
       if (typeof itemSize == "function") {
-        var s = itemSize(index);
-        console.log(`${index} ItemSize`, s);
+        var k = itemSize(index) as any;
+        // console.log(`${index} ItemSize`, k.size);
+        // console.log(`${index} ItemSize`, k);
       }
 
       shouldResetStyleCacheOnItemSizeChange = true;
 
       const itemStyleCache = this._getItemStyleCache(
-        shouldResetStyleCacheOnItemSizeChange && s,
+        shouldResetStyleCacheOnItemSizeChange && k.size,
         shouldResetStyleCacheOnItemSizeChange && layout,
         shouldResetStyleCacheOnItemSizeChange && direction
       );
@@ -597,11 +598,11 @@ export default function createListComponent({
         itemStyleCache[index].height != 100
       ) {
         style = itemStyleCache[index];
-        console.log(`${index} styleCache`, style.height);
+        // console.log(`${index} styleCache`, style.height);
       } else {
         const offset = getItemOffset(this.props, index, this._instanceProps);
         const size = getItemSize(this.props, index, this._instanceProps);
-        console.log(`${index} size post search`, size);
+        // console.log(`${index} size post search`, size);
         // TODO Deprecate direction "horizontal"
         const isHorizontal =
           direction === "horizontal" || layout === "horizontal";
@@ -616,7 +617,8 @@ export default function createListComponent({
           right: isRtl ? offsetHorizontal : undefined,
           top: !isHorizontal ? offset : 0,
           // position: "relative",
-          height: !isHorizontal ? s : "100%",
+          height: !isHorizontal ? size : "100%",
+          // height: !isHorizontal ? k.size : "100%",
           width: isHorizontal ? size : "100%",
         };
       }

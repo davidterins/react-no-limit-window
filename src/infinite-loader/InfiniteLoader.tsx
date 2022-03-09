@@ -103,6 +103,7 @@ export default class InfiniteLoader extends PureComponent<Props> {
       minimumBatchSize = 10,
       threshold = 15,
     } = this.props;
+
     const unloadedRanges = scanForUnloadedRanges({
       isItemLoaded,
       itemCount,

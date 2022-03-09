@@ -80,7 +80,6 @@ const DynamicList = (
     }
 
     for (var i = 0; i < itemCount; i++) {
-
       if (!shouldItemBeMeasured(i)) {
         return;
       }
@@ -113,7 +112,7 @@ const DynamicList = (
   };
 
   const handleListResize = debounce(() => {
-    console.log("Handling list resize!")
+    console.log("Handling list resize!");
     if (listRef.current) {
       cache.clearCache();
       listRef.current.resetAfterIndex(0);
@@ -175,20 +174,18 @@ const DynamicList = (
    * @param {number} index The index of the item in the data array.
    */
   const itemSize = (index) => {
-    // console.log("Cache", cache);
-    // const { id } = data[index];
-
     if (!shouldItemBeMeasured(index)) {
-      return 100;
+      return { size: 100, loaded: false };
     }
 
-    if (cache.values[index]) {
-      return cache.values[index];
-    } else {
-      const height = measureIndex(index);
-      cache.values[index] = height;
-      return height;
+    let measuredHeight;
+
+    if (!cache.values[index]) {
+      cache.values[index] = measureIndex(index);
     }
+    measuredHeight = cache.values[index];
+
+    return { size: measuredHeight, loaded: true };
   };
 
   return (

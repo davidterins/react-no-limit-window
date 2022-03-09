@@ -10,7 +10,7 @@ import { propTypes } from "../scrollbar/Scrollbars/scrollbar.types";
 const listStyle: CSSProperties = {
   display: "inline-block",
   width: "100%",
-  height: "1200px",
+  height: "600px",
   background: "gray",
 };
 
@@ -67,6 +67,7 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
     <InfiniteLoader
       isItemLoaded={isItemLo}
       itemCount={itemCount}
+      minimumBatchSize={pageCollection.pageSize}
       loadMoreItems={loadMoreIt}
     >
       {({ onItemsRendered, ref }) => (

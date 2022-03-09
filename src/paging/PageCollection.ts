@@ -4,6 +4,7 @@ import { Page, PageState } from "./Page";
 type Index = number;
 
 export interface IPageCollection<T> {
+  readonly pageSize: number;
   getItem: (index: number) => T;
   isItemLoaded: (index: number) => boolean;
   getPageState: (index: number) => PageState;
@@ -12,7 +13,7 @@ export interface IPageCollection<T> {
 
 export class PageCollection implements IPageCollection<ListItem> {
   private pages: Map<Index, Page<ListItem>>;
-  public readonly pageSize: number = 10;
+  public readonly pageSize = 10;
 
   constructor() {
     this.pages = new Map<Index, Page<ListItem>>();
@@ -76,7 +77,7 @@ export class PageCollection implements IPageCollection<ListItem> {
                 });
 
                 resolve(pageIndex);
-              }, 500);
+              }, 2000);
             });
           }
         );
@@ -88,6 +89,11 @@ export class PageCollection implements IPageCollection<ListItem> {
         // console.log("Request fetched", fetchedPageIndices);
 
         fetchedPageIndices.forEach((pageIndex) => {
+          const pageStartIndex = pageIndex * this.pageSize;
+          const pageStopIndex = pageStartIndex + this.pageSize - 1;
+          console.log(
+            `- height loaded page with ${pageStartIndex} -> ${pageStopIndex}`
+          );
           this.pages.get(pageIndex).status = "loaded";
         });
 
