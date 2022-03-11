@@ -5,11 +5,13 @@ type VariableSizeProps = Props<any> & {
   estimatedItemSize: number;
 };
 type ItemSizeGetter = (index: number) => { size: number; loaded: boolean };
+
 type ItemMetadata = {
   offset: number;
   size: number;
   loadedDuringMeasure: boolean;
 };
+
 type InstanceProps = {
   itemMetadataMap: Record<number, ItemMetadata>;
   estimatedItemSize: number;
@@ -36,7 +38,8 @@ const getItemMetadata = (
 
     for (let i = lastMeasuredIndex + 1; i <= itemIndex; i++) {
       let itemSizeGetter = getItemSize as ItemSizeGetter;
-      let { size, loaded } = itemSizeGetter(i);
+      // This used pre measure all rows.
+      let { size, loaded } = { loaded: true, size: 100 }; // itemSizeGetter(i);
 
       itemMetadataMap[i] = {
         offset,
@@ -130,7 +133,7 @@ const _getBinarySearcRangeByExponentialSearch = (
   offset: number
 ): { low: number; high: number } => {
   const { itemCount } = listProps;
-  
+
   let interval = 1;
   let currentIndex = startIndex;
   let currentItemOffset = startOffset;
@@ -176,6 +179,10 @@ const getEstimatedTotalSize = (
 };
 
 const VariableSizeList = createListComponent({
+  onloadedItemsRendered: (props, startIndex, stopIndex) => {
+    const {} = props;
+    props.onloadedItemsRendered(props, startIndex, stopIndex);
+  },
   getItemOffset: (
     props: Props<any>,
     index: number,

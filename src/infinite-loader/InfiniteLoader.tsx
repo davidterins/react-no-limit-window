@@ -1,4 +1,5 @@
 import { Component, PureComponent } from "react";
+import { IPreMeasuredForceRender } from "../virtualized-list/createListComponent";
 import isInteger from "./isInteger";
 import isRangeVisible from "./isRangeVisible";
 import scanForUnloadedRanges from "./scanForUnloadedRanges";
@@ -168,7 +169,10 @@ export default class InfiniteLoader extends PureComponent<Props> {
                 if (typeof this._listRef._getItemStyleCache === "function") {
                   this._listRef.current._getItemStyleCache(-1);
                 }
-                this._listRef.current.forceUpdate();
+
+                const listRenderer = this._listRef
+                  .current as IPreMeasuredForceRender;
+                listRenderer.preMeasuredForceRender(startIndex, stopIndex);
               }
             }
           })

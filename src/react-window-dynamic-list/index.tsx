@@ -181,9 +181,28 @@ const DynamicList = (
     let measuredHeight;
 
     if (!cache.values[index]) {
-      cache.values[index] = measureIndex(index);
+      // cache.values[index] = measureIndex(index);
+      return { size: 100, loaded: false };
     }
     measuredHeight = cache.values[index];
+
+    return { size: measuredHeight, loaded: true };
+  };
+
+  const updateSizeAndOffsetCache = (
+    props,
+    startIndex: number,
+    stopIndex: number
+  ) => {
+    for (var i = startIndex; i <= stopIndex; i++) {
+      if (!cache.values[i]) {
+        cache.values[i] = measureIndex(i);
+      }
+    }
+
+    // TODO calculate fragmented offsets here.
+
+    let measuredHeight = cache.values[startIndex];
 
     return { size: measuredHeight, loaded: true };
   };
@@ -193,6 +212,7 @@ const DynamicList = (
       layout="vertical"
       ref={listRef}
       itemSize={itemSize}
+      onloadedItemsRendered={updateSizeAndOffsetCache}
       height={height}
       width={width}
       itemCount={itemCount}

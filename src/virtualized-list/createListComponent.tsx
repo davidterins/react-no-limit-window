@@ -21,6 +21,7 @@ import {
   State,
   ValidateProps,
 } from "./listComponent.types";
+import { number } from "prop-types";
 
 const IS_SCROLLING_DEBOUNCE_INTERVAL = 150;
 const defaultItemKey = (index: number, data: any) => index;
@@ -45,6 +46,9 @@ export interface IScrollable {
   ) => void;
   ScrollToItem: (offset: number) => void;
 }
+export interface IPreMeasuredForceRender {
+  preMeasuredForceRender: (startIndex: number, stopIndex: number) => void;
+}
 
 type VisibilityState =
   | "fully-visible"
@@ -66,6 +70,11 @@ export default function createListComponent({
   getItemOffset: GetItemOffset;
   getEstimatedTotalSize: GetEstimatedTotalSize;
   getItemSize: GetItemSize;
+  onloadedItemsRendered(
+    props: Props<any>,
+    startIndex: number,
+    stopIndex: number
+  );
   getOffsetForIndexAndAlignment: GetOffsetForIndexAndAlignment;
   getStartIndexForOffset: GetStartIndexForOffset;
   getStopIndexForStartIndex: GetStopIndexForStartIndex;
@@ -76,7 +85,7 @@ export default function createListComponent({
   // return class List<T> extends PureComponent<Props<T>, State> {
   return class List<T>
     extends PureComponent<Props<T>, State>
-    implements IScrollable
+    implements IScrollable, IPreMeasuredForceRender
   {
     _instanceProps: any = initInstanceProps(this.props, this);
     _outerRef: HTMLDivElement | null | undefined;
@@ -108,6 +117,71 @@ export default function createListComponent({
       // props.setRef(this);
     }
 
+    public preMeasuredForceRender = (startIndex: number, stopIndex: number) => {
+      // this.forceRender
+      const { itemSize } = this.props;
+
+      let itemHeights: Record<number, number> = {};
+
+      // Update height cache and calculate fragmented offsets
+      this.props.onloadedItemsRendered(this.props, startIndex, stopIndex);
+
+      for (var i = startIndex; i <= stopIndex; i++) {
+        if (typeof itemSize == "function") {
+          // TODO this should return both the offset and height for item.
+          var k = itemSize(i) as any;
+          itemHeights[i] = k;
+          // Get cached item if exist, otherwise measures item
+          this._setItemStyle(i, k.size);
+        }
+      }
+
+      this.forceUpdate();
+    };
+
+    _setItemStyle(index: number, height: number) {
+      const { direction, itemSize, layout } = this.props;
+
+      shouldResetStyleCacheOnItemSizeChange = true;
+
+      const itemStyleCache = this._getItemStyleCache(
+        shouldResetStyleCacheOnItemSizeChange && height,
+        shouldResetStyleCacheOnItemSizeChange && layout,
+        shouldResetStyleCacheOnItemSizeChange && direction
+      );
+
+      let style;
+
+      if (
+        itemStyleCache.hasOwnProperty(index) &&
+        itemStyleCache[index].height != 100
+      ) {
+        style = itemStyleCache[index];
+        // console.log(`${index} styleCache`, style.height);
+      } else {
+        const offset = getItemOffset(this.props, index, this._instanceProps);
+        const size = height; //getItemSize(this.props, index, this._instanceProps);
+        // console.log(`${index} size post search`, size);
+        // TODO Deprecate direction "horizontal"
+        const isHorizontal =
+          direction === "horizontal" || layout === "horizontal";
+
+        const isRtl = direction === "rtl";
+        const offsetHorizontal = isHorizontal ? offset : 0;
+
+        // Update item style cache
+        itemStyleCache[index] = style = {
+          position: "absolute",
+          left: isRtl ? undefined : offsetHorizontal,
+          right: isRtl ? offsetHorizontal : undefined,
+          top: !isHorizontal ? offset : 0,
+          // position: "relative",
+          height: !isHorizontal ? size : "100%",
+          // height: !isHorizontal ? k.size : "100%",
+          width: isHorizontal ? size : "100%",
+        };
+      }
+    }
     public Scrolla(
       clientHeight: number,
       scrollHeight: number,
