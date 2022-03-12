@@ -3,7 +3,7 @@ import React, { forwardRef, useEffect, useLayoutEffect } from "react";
 import VariableSizeList from "../virtualized-list/VariableSizeList";
 import debounce from "lodash.debounce";
 
-import Cache from "./cache";
+import DynamicOffsetFragmentCache from "./cache";
 import useShareForwardedRef from "./utils/useShareForwardRefs";
 import measureElement, { destroyMeasureLayer } from "./asyncMeasurer";
 import { defaultMeasurementContainer } from "./defaultMeasurementContainer";
@@ -12,7 +12,7 @@ import { defaultMeasurementContainer } from "./defaultMeasurementContainer";
  * Create the dynamic list's cache object.
  * @param {Object} knownSizes a mapping between an items id and its size.
  */
-export const createCache = (knownSizes = {}) => new Cache(knownSizes);
+export const createCache = (knownSizes = {}) => new DynamicOffsetFragmentCache(knownSizes);
 
 /**
  * A virtualized list which handles item of varying sizes.

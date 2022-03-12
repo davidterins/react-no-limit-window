@@ -57,8 +57,8 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
 
       let sum = 0;
       let cachedHeights = 0;
-      for (let key in cache.values) {
-        sum += cache.values[key];
+      for (let key in cache._values) {
+        sum += cache._values[key].height;
         cachedHeights += 1;
       }
 
