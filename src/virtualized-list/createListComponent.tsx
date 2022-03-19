@@ -121,20 +121,17 @@ export default function createListComponent({
       // this.forceRender
       const { itemSize } = this.props;
 
-      let itemHeights: Record<number, number> = {};
-
       // Update height cache and calculate fragmented offsets
       this.props.onForceUpdateLoadedItems(this.props, startIndex, stopIndex);
 
-      for (var i = startIndex; i <= stopIndex; i++) {
-        if (typeof itemSize == "function") {
-          // TODO this should return both the offset and height for item.
-          var k = itemSize(i) as any;
-          itemHeights[i] = k;
-          // Get cached item if exist, otherwise measures item
-          this._setItemStyle(i, k.size);
-        }
-      }
+      // for (var i = startIndex; i <= stopIndex; i++) {
+      //   if (typeof itemSize == "function") {
+      //     // TODO this should return both the offset and height for item.
+      //     var k = itemSize(i) as any;
+      //     // Get cached item if exist, otherwise measures item
+      //     this._setItemStyle(i, k.size);
+      //   }
+      // }
 
       this.forceUpdate();
     };
@@ -162,7 +159,10 @@ export default function createListComponent({
       } else {
         const offset = getItemOffset(this.props, index, this._instanceProps);
         const size = height; //getItemSize(this.props, index, this._instanceProps);
-        // console.log(`${index} size post search`, size);
+        // console.log(`${index} size post search`, {
+        //   offset: offset,
+        //   size: size,
+        // });
         // TODO Deprecate direction "horizontal"
         const isHorizontal =
           direction === "horizontal" || layout === "horizontal";
@@ -183,6 +183,7 @@ export default function createListComponent({
         };
       }
     }
+
     public Scrolla(
       clientHeight: number,
       scrollHeight: number,
@@ -619,6 +620,10 @@ export default function createListComponent({
             visibleStopIndex,
           ] = this._getRangeToRender();
 
+          console.log("Call on Items rendered", {
+            visibleStartIndex,
+            visibleStopIndex,
+          });
           this._callOnItemsRendered(
             overscanStartIndex,
             overscanStopIndex,
@@ -677,7 +682,10 @@ export default function createListComponent({
       } else {
         const offset = getItemOffset(this.props, index, this._instanceProps);
         const size = getItemSize(this.props, index, this._instanceProps);
-        // console.log(`${index} size post search`, size);
+        console.log(`${index} size post search`, {
+          offset: offset,
+          size: size,
+        });
         // TODO Deprecate direction "horizontal"
         const isHorizontal =
           direction === "horizontal" || layout === "horizontal";

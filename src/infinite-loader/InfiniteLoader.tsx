@@ -142,16 +142,16 @@ export default class InfiniteLoader extends PureComponent<Props> {
       if (promise != null) {
         promise
           .then(() => {
+            const rangeVisible = isRangeVisible({
+              lastRenderedStartIndex: this._lastRenderedStartIndex,
+              lastRenderedStopIndex: this._lastRenderedStopIndex,
+              startIndex,
+              stopIndex,
+            });
             // Refresh the visible rows if any of them have just been loaded.
             // Otherwise they will remain in their unloaded visual state.
-            if (
-              isRangeVisible({
-                lastRenderedStartIndex: this._lastRenderedStartIndex,
-                lastRenderedStopIndex: this._lastRenderedStopIndex,
-                startIndex,
-                stopIndex,
-              })
-            ) {
+
+            if (rangeVisible) {
               // Handle an unmount while promises are still in flight.
               if (this._listRef?.current == null) {
                 return;

@@ -205,10 +205,11 @@ const DynamicList = (
 
     // 1. Make sure that the indices have measure heights
     for (var index = startIndex; index <= stopIndex; index++) {
+      uncachedIndices.push(index);
+
       if (!_cache.has(index)) {
         let measuredHeight = measureIndex(index);
         _cache.addHeight({ index, height: measuredHeight });
-        uncachedIndices.push(index);
       }
     }
 
@@ -231,12 +232,10 @@ const DynamicList = (
   };
 
   const getItemMetaData = (index: number): ItemMetadata => {
-    let cached = _cache.get(index);
     let itemHeight = _cache.get(index).height;
-    let itemOffset = dynamicOffsetCache.getOffset(index);
+    let itemOffset = dynamicOffsetCache.getItemOffset(index, itemHeight);
 
     return { height: itemHeight, offset: itemOffset };
-    // return { ...cached };
   };
 
   return (

@@ -24,11 +24,7 @@ const getItemMetadata = (
   itemIndex: number,
   instanceProps: InstanceProps
 ): ItemMetadata => {
-  const {
-    itemSize: getItemSize,
-    getItemMetaData,
-    estimatedItemSize,
-  } = props as VariableSizeProps;
+  const { getItemMetaData } = props as VariableSizeProps;
 
   const meta = getItemMetaData(itemIndex);
 
@@ -71,31 +67,31 @@ const _getStartIndexForOffset = (
   instanceProps: InstanceProps,
   offset: number
 ): number => {
-  const { itemMetadataMap /*, lastMeasuredIndex*/ } = instanceProps;
-  const lastMeasuredIndex = -1;
-  console.log("Find Start index lastMesauredIndex", lastMeasuredIndex);
+  // const { itemMetadataMap /*, lastMeasuredIndex*/ } = instanceProps;
+  // const lastMeasuredIndex = -1;
+  // console.log("Find Start index lastMesauredIndex", lastMeasuredIndex);
 
-  const lastMeasuredItemOffset =
-    lastMeasuredIndex > 0 ? itemMetadataMap[lastMeasuredIndex].offset : 0;
+  // const lastMeasuredItemOffset =
+  //   lastMeasuredIndex > 0 ? itemMetadataMap[lastMeasuredIndex].offset : 0;
 
-  let high = lastMeasuredIndex;
+  let high = props.itemCount - 1; // lastMeasuredIndex;
   let low = 0;
 
-  if (offset > lastMeasuredItemOffset) {
-    // If we haven't yet measured this high, fallback to an exponential search with an inner binary search.
-    // The exponential search avoids pre-computing sizes for the full set of items as a binary search would.
-    // The overall complexity for this approach is O(log n).
-    const searchRange = _getBinarySearcRangeByExponentialSearch(
-      props,
-      instanceProps,
-      Math.max(0, lastMeasuredIndex),
-      lastMeasuredItemOffset,
-      offset
-    );
+  // if (offset > lastMeasuredItemOffset) {
+  //   // If we haven't yet measured this high, fallback to an exponential search with an inner binary search.
+  //   // The exponential search avoids pre-computing sizes for the full set of items as a binary search would.
+  //   // The overall complexity for this approach is O(log n).
+  //   const searchRange = _getBinarySearcRangeByExponentialSearch(
+  //     props,
+  //     instanceProps,
+  //     Math.max(0, lastMeasuredIndex),
+  //     lastMeasuredItemOffset,
+  //     offset
+  //   );
 
-    low = searchRange.low;
-    high = searchRange.high;
-  }
+  //   low = searchRange.low;
+  //   high = searchRange.high;
+  // }
 
   // If we've already measured items within this range just use a binary search as it's faster.
   const nearestItemIndex = _findNearestItemBinarySearch(
@@ -105,6 +101,8 @@ const _getStartIndexForOffset = (
     low,
     offset
   );
+
+  console.log("Start Renderable Index: ", nearestItemIndex);
 
   return nearestItemIndex;
 };
