@@ -59,7 +59,7 @@ export type Props<T> = {
   itemSize: itemSize;
   layout: Layout;
   onItemsRendered?: onItemsRenderedCallback;
-  onloadedItemsRendered(props: Props<any>, startIndex: number, stopIndex: number)
+  onForceUpdateLoadedItems(props: Props<any>, startIndex: number, stopIndex: number)
   onScroll?: onScrollCallback;
   outerRef?: any;
   outerTagName?: string;

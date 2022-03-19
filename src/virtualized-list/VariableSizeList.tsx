@@ -1,15 +1,16 @@
 import createListComponent, { IScrollable } from "./createListComponent";
 import { Props, ScrollToAlign } from "./listComponent.types";
 const DEFAULT_ESTIMATED_ITEM_SIZE = 100;
-type VariableSizeProps = Props<any> & {
+export type VariableSizeProps = Props<any> & {
   estimatedItemSize: number;
+  getItemMetaData: (index: number) => ItemMetadata;
 };
 type ItemSizeGetter = (index: number) => { size: number; loaded: boolean };
 
-type ItemMetadata = {
+export type ItemMetadata = {
   offset: number;
-  size: number;
-  loadedDuringMeasure: boolean;
+  height: number;
+  // loadedDuringMeasure: boolean;
 };
 
 type InstanceProps = {
@@ -23,38 +24,46 @@ const getItemMetadata = (
   itemIndex: number,
   instanceProps: InstanceProps
 ): ItemMetadata => {
-  const { itemSize: getItemSize, estimatedItemSize } =
-    props as VariableSizeProps;
+  const {
+    itemSize: getItemSize,
+    getItemMetaData,
+    estimatedItemSize,
+  } = props as VariableSizeProps;
 
-  const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
+  const meta = getItemMetaData(itemIndex);
 
-  if (itemIndex > lastMeasuredIndex) {
-    let offset = 0;
+  return meta;
 
-    if (lastMeasuredIndex >= 0) {
-      const lastMeasuredItemMetadata = itemMetadataMap[lastMeasuredIndex];
-      offset = lastMeasuredItemMetadata.offset + lastMeasuredItemMetadata.size;
-    }
+  // const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
 
-    for (let i = lastMeasuredIndex + 1; i <= itemIndex; i++) {
-      let itemSizeGetter = getItemSize as ItemSizeGetter;
-      // This used pre measure all rows.
-      let { size, loaded } = { loaded: true, size: 100 }; // itemSizeGetter(i);
+  // if (itemIndex > lastMeasuredIndex) {
+  //   let offset = 0;
 
-      itemMetadataMap[i] = {
-        offset,
-        size,
-        loadedDuringMeasure: loaded,
-      };
-      offset += size;
+  //   if (lastMeasuredIndex >= 0) {
+  //     const lastMeasuredItemMetadata = itemMetadataMap[lastMeasuredIndex];
+  //     offset =
+  //       lastMeasuredItemMetadata.offset + lastMeasuredItemMetadata.height;
+  //   }
 
-      if (loaded) {
-        instanceProps.lastMeasuredIndex = itemIndex;
-      }
-    }
-  }
+  //   for (let i = lastMeasuredIndex + 1; i <= itemIndex; i++) {
+  //     let itemSizeGetter = getItemSize as ItemSizeGetter;
+  //     // This used pre measure all rows.
+  //     let { size, loaded } = { loaded: true, size: 100 }; // itemSizeGetter(i);
 
-  return itemMetadataMap[itemIndex];
+  //     itemMetadataMap[i] = {
+  //       offset,
+  //       height: size,
+  //       // loadedDuringMeasure: loaded,
+  //     };
+  //     offset += size;
+
+  //     if (loaded) {
+  //       instanceProps.lastMeasuredIndex = itemIndex;
+  //     }
+  //   }
+  // }
+
+  // return itemMetadataMap[itemIndex];
 };
 
 const _getStartIndexForOffset = (
@@ -62,8 +71,10 @@ const _getStartIndexForOffset = (
   instanceProps: InstanceProps,
   offset: number
 ): number => {
-  const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
+  const { itemMetadataMap /*, lastMeasuredIndex*/ } = instanceProps;
+  const lastMeasuredIndex = -1;
   console.log("Find Start index lastMesauredIndex", lastMeasuredIndex);
+
   const lastMeasuredItemOffset =
     lastMeasuredIndex > 0 ? itemMetadataMap[lastMeasuredIndex].offset : 0;
 
@@ -169,7 +180,7 @@ const getEstimatedTotalSize = (
 
   if (lastMeasuredIndex >= 0) {
     const itemMetadata = itemMetadataMap[lastMeasuredIndex];
-    totalSizeOfMeasuredItems = itemMetadata.offset + itemMetadata.size;
+    totalSizeOfMeasuredItems = itemMetadata.offset + itemMetadata.height;
   }
 
   const numUnmeasuredItems = itemCount - lastMeasuredIndex - 1;
@@ -181,7 +192,7 @@ const getEstimatedTotalSize = (
 const VariableSizeList = createListComponent({
   onloadedItemsRendered: (props, startIndex, stopIndex) => {
     const {} = props;
-    props.onloadedItemsRendered(props, startIndex, stopIndex);
+    props.onForceUpdateLoadedItems(props, startIndex, stopIndex);
   },
   getItemOffset: (
     props: Props<any>,
@@ -192,7 +203,7 @@ const VariableSizeList = createListComponent({
     props: Props<any>,
     index: number,
     instanceProps: InstanceProps
-  ): number => instanceProps.itemMetadataMap[index].size,
+  ): number => getItemMetadata(props, index, instanceProps).height,
   getEstimatedTotalSize,
   getOffsetForIndexAndAlignment: (
     props: Props<any>,
@@ -216,7 +227,7 @@ const VariableSizeList = createListComponent({
     );
     const minOffset = Math.max(
       0,
-      itemMetadata.offset - size + itemMetadata.size
+      itemMetadata.offset - size + itemMetadata.height
     );
 
     if (align === "smart") {
@@ -269,12 +280,12 @@ const VariableSizeList = createListComponent({
     const itemMetadata = getItemMetadata(props, startIndex, instanceProps);
     const maxOffset = scrollOffset + size;
 
-    let offset = itemMetadata.offset + itemMetadata.size;
+    let offset = itemMetadata.offset + itemMetadata.height;
     let stopIndex = startIndex;
 
     while (stopIndex < itemCount - 1 && offset < maxOffset) {
       stopIndex++;
-      offset += getItemMetadata(props, stopIndex, instanceProps).size;
+      offset += getItemMetadata(props, stopIndex, instanceProps).height;
     }
 
     return stopIndex;

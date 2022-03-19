@@ -124,7 +124,7 @@ export default function createListComponent({
       let itemHeights: Record<number, number> = {};
 
       // Update height cache and calculate fragmented offsets
-      this.props.onloadedItemsRendered(this.props, startIndex, stopIndex);
+      this.props.onForceUpdateLoadedItems(this.props, startIndex, stopIndex);
 
       for (var i = startIndex; i <= stopIndex; i++) {
         if (typeof itemSize == "function") {
@@ -153,8 +153,9 @@ export default function createListComponent({
       let style;
 
       if (
-        itemStyleCache.hasOwnProperty(index) &&
-        itemStyleCache[index].height != 100
+        (itemStyleCache.hasOwnProperty(index) &&
+          itemStyleCache[index].height != 100) ||
+        itemStyleCache[index].height != 18
       ) {
         style = itemStyleCache[index];
         // console.log(`${index} styleCache`, style.height);

@@ -1,18 +1,32 @@
 import React, { forwardRef, useEffect, useLayoutEffect } from "react";
-// import { VariableSizeList } from "react-window";
-import VariableSizeList from "../virtualized-list/VariableSizeList";
+import VariableSizeList, {
+  ItemMetadata,
+  VariableSizeProps,
+} from "../virtualized-list/VariableSizeList";
 import debounce from "lodash.debounce";
-
 import DynamicOffsetFragmentCache from "./cache";
 import useShareForwardedRef from "./utils/useShareForwardRefs";
 import measureElement, { destroyMeasureLayer } from "./asyncMeasurer";
 import { defaultMeasurementContainer } from "./defaultMeasurementContainer";
+import { DynamicOffsetCache } from "./DynamicOffsetCache";
+
+type DynamicSizeProps<T> = VariableSizeProps & {
+  cache: DynamicOffsetFragmentCache;
+  lazyMeasurement: boolean;
+  data: T;
+  shouldItemBeMeasured: (index: number) => boolean;
+  recalculateItemsOnResize: { width: boolean; height: boolean };
+  debug: boolean;
+};
 
 /**
  * Create the dynamic list's cache object.
  * @param {Object} knownSizes a mapping between an items id and its size.
  */
-export const createCache = (knownSizes = {}) => new DynamicOffsetFragmentCache(knownSizes);
+export const createCache = (knownSizes = {}) =>
+  new DynamicOffsetFragmentCache(knownSizes);
+
+const dynamicOffsetCache = new DynamicOffsetCache();
 
 /**
  * A virtualized list which handles item of varying sizes.
@@ -30,12 +44,14 @@ const DynamicList = (
     shouldItemBeMeasured,
     lazyMeasurement = true,
     recalculateItemsOnResize = { width: true, height: true },
-    measurementContainerElement = defaultMeasurementContainer,
+    // measurementContainerElement = defaultMeasurementContainer,
     debug = false,
+
     ...variableSizeListProps
-  },
-  ref
+  }: any,
+  ref: any
 ) => {
+  const _cache = cache as DynamicOffsetFragmentCache;
   const listRef = useShareForwardedRef(ref);
   const containerResizeDeps = [];
 
@@ -50,14 +66,15 @@ const DynamicList = (
    * Measure a specific item.
    * @param {number} index The index of the item in the data array.
    */
-  const measureIndex = (index) => {
+  const measureIndex = (index: number) => {
+    const renderItem = (children as any)({ index, data: itemData });
     const ItemContainer = (
       <div id="item-container" style={{ overflow: "auto" }}>
-        {children({ index, data: itemData })}
+        {renderItem}
       </div>
     );
 
-    const MeasurementContainer = measurementContainerElement({
+    const MeasurementContainer = defaultMeasurementContainer({
       style: { width, height, overflowY: "scroll" },
       children: ItemContainer,
     });
@@ -85,36 +102,22 @@ const DynamicList = (
       }
       // We use set timeout here in order to execute the measuring in a background thread.
       setTimeout(() => {
-        if (!cache.values[i]) {
+        if (!_cache.get(i)) {
           const height = measureIndex(i);
 
           // Double check in case the main thread already populated this id
-          if (!cache.values[i]) {
-            cache.values[i] = height;
+          if (!_cache.get(i)) {
+            _cache.addHeight({ index: i, height: height });
           }
         }
       }, 0);
     }
-
-    // data.forEach(({ id }, index) => {
-    //   // We use set timeout here in order to execute the measuring in a background thread.
-    //   setTimeout(() => {
-    //     if (!cache.values[id]) {
-    //       const height = measureIndex(index);
-
-    //       // Double check in case the main thread already populated this id
-    //       if (!cache.values[id]) {
-    //         cache.values[id] = height;
-    //       }
-    //     }
-    //   }, 0);
-    // });
   };
 
   const handleListResize = debounce(() => {
     console.log("Handling list resize!");
     if (listRef.current) {
-      cache.clearCache();
+      _cache.clearCache();
       listRef.current.resetAfterIndex(0);
       lazyCacheFill();
     }
@@ -144,7 +147,7 @@ const DynamicList = (
   useEffect(() => {
     if (listRef.current) {
       listRef.current.resetAfterIndex = (index, shouldForceUpdate = true) => {
-        cache.clearCache();
+        _cache.clearCache();
         lazyCacheFill();
         listRef.current._resetAfterIndex(index, shouldForceUpdate);
       };
@@ -180,31 +183,60 @@ const DynamicList = (
 
     let measuredHeight;
 
-    if (!cache.values[index]) {
+    if (!_cache.get(index)) {
       // cache.values[index] = measureIndex(index);
       return { size: 100, loaded: false };
     }
-    measuredHeight = cache.values[index];
+
+    measuredHeight = _cache.get(index);
 
     return { size: measuredHeight, loaded: true };
   };
 
-  const updateSizeAndOffsetCache = (
+  const handleItemsToDisplayInListView = (
     props,
     startIndex: number,
     stopIndex: number
   ) => {
-    for (var i = startIndex; i <= stopIndex; i++) {
-      if (!cache.values[i]) {
-        cache.values[i] = measureIndex(i);
+    // Here items in view has been requested to be force updated
+    // since they are in now in loaded state.
+
+    let uncachedIndices: number[] = [];
+
+    // 1. Make sure that the indices have measure heights
+    for (var index = startIndex; index <= stopIndex; index++) {
+      if (!_cache.has(index)) {
+        let measuredHeight = measureIndex(index);
+        _cache.addHeight({ index, height: measuredHeight });
+        uncachedIndices.push(index);
       }
     }
 
-    // TODO calculate fragmented offsets here.
+    // 2. Update the list item offsets when the rendered heights are known.
+    if (uncachedIndices.length > 0) {
+      // If new items have been measured, it means that the offset cache might
+      // be invalidated and needs to be updated.
+      let newCachedRange = uncachedIndices.map((i) => {
+        return { index: i, height: _cache.get(i).height };
+      });
 
-    let measuredHeight = cache.values[startIndex];
+      dynamicOffsetCache.UpdateOffsets(newCachedRange);
+    }
 
-    return { size: measuredHeight, loaded: true };
+    _cache.updateOffsets(startIndex, stopIndex);
+
+    let cachedHeight = _cache.get(startIndex);
+
+    return { size: cachedHeight, loaded: true };
+  };
+
+  const getItemMetaData = (index: number): ItemMetadata => {
+    let cached = _cache.get(index);
+    let itemHeight = _cache.get(index).height;
+    let itemOffset = dynamicOffsetCache.getOffset(index);
+
+    return { height: itemHeight, offset: itemOffset };
+    // return { ...cached };
   };
 
   return (
@@ -212,7 +244,8 @@ const DynamicList = (
       layout="vertical"
       ref={listRef}
       itemSize={itemSize}
-      onloadedItemsRendered={updateSizeAndOffsetCache}
+      onForceUpdateLoadedItems={handleItemsToDisplayInListView}
+      getItemMetaData={getItemMetaData}
       height={height}
       width={width}
       itemCount={itemCount}
