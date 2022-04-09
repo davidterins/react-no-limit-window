@@ -10,8 +10,10 @@ import {
   GetItemSize,
   GetOffsetForIndexAndAlignment,
   GetStartIndexForOffset,
-  GetStopIndexForStartIndex,
+  GetStopItemInfosForStartIndex,
   InitInstanceProps,
+  ItemInfoForOffset,
+  ItemMeasurementMeta,
   onItemsRenderedCallback,
   onScrollCallback,
   Props,
@@ -21,7 +23,6 @@ import {
   State,
   ValidateProps,
 } from "./listComponent.types";
-import { number } from "prop-types";
 
 const IS_SCROLLING_DEBOUNCE_INTERVAL = 150;
 const defaultItemKey = (index: number, data: any) => index;
@@ -59,7 +60,7 @@ type VisibilityState =
 export default function createListComponent({
   getItemOffset,
   getEstimatedTotalSize,
-  getItemSize,
+  // getItemSize,
   getOffsetForIndexAndAlignment,
   getStartIndexForOffset,
   getStopIndexForStartIndex,
@@ -69,7 +70,7 @@ export default function createListComponent({
 }: {
   getItemOffset: GetItemOffset;
   getEstimatedTotalSize: GetEstimatedTotalSize;
-  getItemSize: GetItemSize;
+  // getItemSize: GetItemSize;
   onloadedItemsRendered(
     props: Props<any>,
     startIndex: number,
@@ -77,7 +78,7 @@ export default function createListComponent({
   );
   getOffsetForIndexAndAlignment: GetOffsetForIndexAndAlignment;
   getStartIndexForOffset: GetStartIndexForOffset;
-  getStopIndexForStartIndex: GetStopIndexForStartIndex;
+  getStopIndexForStartIndex: GetStopItemInfosForStartIndex;
   initInstanceProps: InitInstanceProps;
   shouldResetStyleCacheOnItemSizeChange: boolean;
   validateProps: ValidateProps;
@@ -118,71 +119,9 @@ export default function createListComponent({
     }
 
     public preMeasuredForceRender = (startIndex: number, stopIndex: number) => {
-      // this.forceRender
-      const { itemSize } = this.props;
-
-      // Update height cache and calculate fragmented offsets
-      this.props.onForceUpdateLoadedItems(this.props, startIndex, stopIndex);
-
-      // for (var i = startIndex; i <= stopIndex; i++) {
-      //   if (typeof itemSize == "function") {
-      //     // TODO this should return both the offset and height for item.
-      //     var k = itemSize(i) as any;
-      //     // Get cached item if exist, otherwise measures item
-      //     this._setItemStyle(i, k.size);
-      //   }
-      // }
-
+      // this.props.onForceUpdateLoadedItems(this.props, startIndex, stopIndex);
       this.forceUpdate();
     };
-
-    _setItemStyle(index: number, height: number) {
-      const { direction, itemSize, layout } = this.props;
-
-      shouldResetStyleCacheOnItemSizeChange = true;
-
-      const itemStyleCache = this._getItemStyleCache(
-        shouldResetStyleCacheOnItemSizeChange && height,
-        shouldResetStyleCacheOnItemSizeChange && layout,
-        shouldResetStyleCacheOnItemSizeChange && direction
-      );
-
-      let style;
-
-      if (
-        (itemStyleCache.hasOwnProperty(index) &&
-          itemStyleCache[index].height != 100) ||
-        itemStyleCache[index].height != 18
-      ) {
-        style = itemStyleCache[index];
-        // console.log(`${index} styleCache`, style.height);
-      } else {
-        const offset = getItemOffset(this.props, index, this._instanceProps);
-        const size = height; //getItemSize(this.props, index, this._instanceProps);
-        // console.log(`${index} size post search`, {
-        //   offset: offset,
-        //   size: size,
-        // });
-        // TODO Deprecate direction "horizontal"
-        const isHorizontal =
-          direction === "horizontal" || layout === "horizontal";
-
-        const isRtl = direction === "rtl";
-        const offsetHorizontal = isHorizontal ? offset : 0;
-
-        // Update item style cache
-        itemStyleCache[index] = style = {
-          position: "absolute",
-          left: isRtl ? undefined : offsetHorizontal,
-          right: isRtl ? offsetHorizontal : undefined,
-          top: !isHorizontal ? offset : 0,
-          // position: "relative",
-          height: !isHorizontal ? size : "100%",
-          // height: !isHorizontal ? k.size : "100%",
-          width: isHorizontal ? size : "100%",
-        };
-      }
-    }
 
     public Scrolla(
       clientHeight: number,
@@ -298,6 +237,8 @@ export default function createListComponent({
       }
     }
 
+    rangeToRender: [number, number, number, number];
+
     render() {
       const {
         children: rowElement,
@@ -320,13 +261,18 @@ export default function createListComponent({
       // TODO Deprecate direction "horizontal"
       const isHorizontal =
         direction === "horizontal" || layout === "horizontal";
-      const onScrollz = isHorizontal
-        ? this._onScrollHorizontal
-        : this._onScrollVertical;
 
-      const [startIndex, stopIndex] = this._getRangeToRender();
-      // console.log("List instance props", this._instanceProps);
-      console.log(`Range to render: ${startIndex} -> ${stopIndex}`);
+      // 1. get offset of first item to render, this should be the only call to getItemOffset
+      //    as it is a slow call & needs optimization.
+      const [itemMeasurementInfos, startIndex, stopIndex] =
+        this._getRangeToRenderSuper();
+
+      this.rangeToRender = [startIndex, stopIndex, startIndex, stopIndex];
+
+      console.log(
+        `Range to render: ${startIndex} -> ${stopIndex}`,
+        itemMeasurementInfos
+      );
 
       const items = [];
 
@@ -342,9 +288,19 @@ export default function createListComponent({
       }[] = [];
 
       if (itemCount > 0) {
-        for (let index = startIndex; index <= stopIndex; index++) {
-          // console.log(index);
-          const listItemStyle: CSSProperties = this._getItemStyle(index);
+        // for (let index = startIndex; index <= stopIndex; index++) {
+        for (let i = 0; i < itemMeasurementInfos.length; i++) {
+          const {
+            index,
+            offsetTop,
+            height: itemHeight,
+          } = itemMeasurementInfos[i];
+
+          const listItemStyle: CSSProperties = this._getItemStyleSuper(
+            index,
+            offsetTop,
+            itemHeight
+          );
 
           const viewPortStopPixel = scrollOffset + (height as number);
           const listItemStart = listItemStyle.top as number;
@@ -618,12 +574,15 @@ export default function createListComponent({
             overscanStopIndex,
             visibleStartIndex,
             visibleStopIndex,
-          ] = this._getRangeToRender();
+          ] = this.rangeToRender; // <- this save a lot of performance this._getRangeToRender();
 
-          console.log("Call on Items rendered", {
-            visibleStartIndex,
-            visibleStopIndex,
-          });
+          console.debug(
+            "Call on Items rendered: TODO LOOK INTO THIS METHOD AS IT IS EXPENSIVE!!!",
+            {
+              visibleStartIndex,
+              visibleStopIndex,
+            }
+          );
           this._callOnItemsRendered(
             overscanStartIndex,
             overscanStopIndex,
@@ -645,26 +604,17 @@ export default function createListComponent({
       }
     }
 
-    // Lazily create and cache item styles while scrolling,
-    // So that pure component sCU will prevent re-renders.
-    // We maintain this cache, and pass a style prop rather than index,
-    // So that List can clear cached styles and force item re-render if necessary.
-    // _getItemStyle: (index: number) => Record<string, any>;
-    _getItemStyle = (index: number): Record<string, any> => {
-      const { direction, itemSize, layout } = this.props;
-
-      // console.log("ItemSize", itemSize);
-
-      if (typeof itemSize == "function") {
-        var k = itemSize(index) as any;
-        // console.log(`${index} ItemSize`, k.size);
-        // console.log(`${index} ItemSize`, k);
-      }
+    _getItemStyleSuper = (
+      index: number,
+      offsetTop: number,
+      height: number
+    ): Record<string, any> => {
+      const { direction, layout } = this.props;
 
       shouldResetStyleCacheOnItemSizeChange = true;
 
       const itemStyleCache = this._getItemStyleCache(
-        shouldResetStyleCacheOnItemSizeChange && k.size,
+        shouldResetStyleCacheOnItemSizeChange && height,
         shouldResetStyleCacheOnItemSizeChange && layout,
         shouldResetStyleCacheOnItemSizeChange && direction
       );
@@ -680,12 +630,17 @@ export default function createListComponent({
         style = itemStyleCache[index];
         // console.log(`${index} styleCache`, style.height);
       } else {
-        const offset = getItemOffset(this.props, index, this._instanceProps);
-        const size = getItemSize(this.props, index, this._instanceProps);
-        console.log(`${index} size post search`, {
-          offset: offset,
-          size: size,
-        });
+        const offset = offsetTop;
+        const size = height;
+
+        // Use commented code below to prove performance difference.
+        // const offset = index * 100; // getItemOffset(this.props, index, this._instanceProps);
+        // const size = 100; // getItemSize(this.props, index, this._instanceProps);
+
+        // console.log(`${index} size post search`, {
+        //   offset: offset,
+        //   size: size,
+        // });
         // TODO Deprecate direction "horizontal"
         const isHorizontal =
           direction === "horizontal" || layout === "horizontal";
@@ -709,6 +664,77 @@ export default function createListComponent({
       return style;
     };
 
+    // // Lazily create and cache item styles while scrolling,
+    // // So that pure component sCU will prevent re-renders.
+    // // We maintain this cache, and pass a style prop rather than index,
+    // // So that List can clear cached styles and force item re-render if necessary.
+    // // _getItemStyle: (index: number) => Record<string, any>;
+    // _getItemStyle = (index: number): Record<string, any> => {
+    //   const { direction, itemSize, layout } = this.props;
+
+    //   // console.log("ItemSize", itemSize);
+
+    //   if (typeof itemSize == "function") {
+    //     // TODO: this replace this call;
+    //     var k = itemSize(index) as any;
+    //     // console.log(`${index} ItemSize`, k.size);
+    //     // console.log(`${index} ItemSize`, k);
+    //   }
+
+    //   shouldResetStyleCacheOnItemSizeChange = true;
+
+    //   const itemStyleCache = this._getItemStyleCache(
+    //     shouldResetStyleCacheOnItemSizeChange && k.size,
+    //     shouldResetStyleCacheOnItemSizeChange && layout,
+    //     shouldResetStyleCacheOnItemSizeChange && direction
+    //   );
+
+    //   // console.log("Item style cache:", itemStyleCache);
+
+    //   let style;
+
+    //   if (
+    //     itemStyleCache.hasOwnProperty(index) &&
+    //     itemStyleCache[index].height != 100
+    //   ) {
+    //     style = itemStyleCache[index];
+    //     // console.log(`${index} styleCache`, style.height);
+    //   } else {
+    //     // TODO: AVOID GetItemMetaData calls here as they are expensive!
+    //     const offset = getItemOffset(this.props, index, this._instanceProps);
+    //     const size = getItemSize(this.props, index, this._instanceProps);
+
+    //     // Use commented code below to prove performance difference.
+    //     // const offset = index * 100; // getItemOffset(this.props, index, this._instanceProps);
+    //     // const size = 100; // getItemSize(this.props, index, this._instanceProps);
+
+    //     console.log(`${index} size post search`, {
+    //       offset: offset,
+    //       size: size,
+    //     });
+    //     // TODO Deprecate direction "horizontal"
+    //     const isHorizontal =
+    //       direction === "horizontal" || layout === "horizontal";
+
+    //     const isRtl = direction === "rtl";
+    //     const offsetHorizontal = isHorizontal ? offset : 0;
+
+    //     // Update item style cache
+    //     itemStyleCache[index] = style = {
+    //       position: "absolute",
+    //       left: isRtl ? undefined : offsetHorizontal,
+    //       right: isRtl ? offsetHorizontal : undefined,
+    //       top: !isHorizontal ? offset : 0,
+    //       // position: "relative",
+    //       height: !isHorizontal ? size : "100%",
+    //       // height: !isHorizontal ? k.size : "100%",
+    //       width: isHorizontal ? size : "100%",
+    //     };
+    //   }
+
+    //   return style;
+    // };
+
     _getItemStyleCache = memoizeOne((_: any, __: any, ___: any) => ({}));
 
     _getRangeToRender(): [number, number, number, number] {
@@ -718,14 +744,17 @@ export default function createListComponent({
         return [0, 0, 0, 0];
       }
 
-      const startIndex = getStartIndexForOffset(
+      const startItemInfo = getStartIndexForOffset(
         this.props,
         scrollOffset,
         this._instanceProps
       );
-      const stopIndex = getStopIndexForStartIndex(
+
+      const { index: startItemIndex } = startItemInfo;
+
+      const stopItemInfos = getStopIndexForStartIndex(
         this.props,
-        startIndex,
+        startItemInfo,
         scrollOffset,
         this._instanceProps
       );
@@ -740,10 +769,63 @@ export default function createListComponent({
       //   ? Math.max(1, overscanCount)
       //   : 1;
       return [
-        Math.max(0, startIndex - overscanBackward),
-        Math.max(0, Math.min(itemCount - 1, stopIndex + overscanForward)),
-        startIndex,
-        stopIndex,
+        Math.max(0, startItemIndex - overscanBackward),
+        Math.max(
+          0,
+          Math.min(itemCount - 1, stopItemInfos.stopIndex + overscanForward)
+        ),
+        startItemIndex,
+        stopItemInfos.stopIndex,
+      ];
+    }
+
+    _getRangeToRenderSuper(): [
+      ItemInfoForOffset[],
+      number,
+      number,
+      number,
+      number
+    ] {
+      const { itemCount, overscanCount } = this.props;
+      const { isScrolling, scrollDirection, scrollOffset } = this.state;
+      if (itemCount === 0) {
+        return [[], 0, 0, 0, 0];
+      }
+
+      const startItemInfo = getStartIndexForOffset(
+        this.props,
+        scrollOffset,
+        this._instanceProps
+      );
+
+      const { index: startItemIndex } = startItemInfo;
+
+      const stopItemInfos = getStopIndexForStartIndex(
+        this.props,
+        startItemInfo,
+        scrollOffset,
+        this._instanceProps
+      );
+
+      // Overscan by one item in each direction so that tab/focus works.
+      // If there isn't at least one extra item, tab loops back around.
+      const overscanBackward = 0;
+      // !isScrolling || scrollDirection === "backward"
+      //   ? Math.max(1, overscanCount)
+      //   : 1;
+      const overscanForward = 0;
+      // !isScrolling || scrollDirection === "forward"
+      //   ? Math.max(1, overscanCount)
+      //   : 1;
+      return [
+        stopItemInfos.itemMeasurementInfos,
+        Math.max(0, startItemIndex - overscanBackward),
+        Math.max(
+          0,
+          Math.min(itemCount - 1, stopItemInfos.stopIndex + overscanForward)
+        ),
+        startItemIndex,
+        stopItemInfos.stopIndex,
       ];
     }
 

@@ -1,211 +1,77 @@
+import { OffsetStorage } from "./OffsetStorage";
+
 const itemDefaultHeight = 100;
+
+export type MeasuredItem = { index: number; height: number };
 
 export class DynamicOffsetCache {
   m_OffsetStorage: OffsetStorage;
   m_LastMeasuredIndex: number;
+  m_lastMeasuredOffsetEnd: number;
 
   constructor() {
     this.m_LastMeasuredIndex = -1;
-    this.m_OffsetStorage = new OffsetStorage();
+    this.m_lastMeasuredOffsetEnd = 0;
+    this.m_OffsetStorage = new OffsetStorage(itemDefaultHeight);
   }
 
-  public UpdateOffsets(uncachedItems: { index: number; height: number }[]) {
-    if (uncachedItems.length == 0) return;
+  public UpdateOffsets(measuredItems: MeasuredItem[]) {
+    if (measuredItems.length == 0) return;
 
-    const lastMeasuredIndex = this.m_LastMeasuredIndex;
-    const lastMeasuredOffsetEnd =
-      this.m_OffsetStorage.getOffset(lastMeasuredIndex);
+    const measuredRangeStartIndex = measuredItems[0].index;
+    const measuredRangeStopIndex =
+      measuredItems[measuredItems.length - 1].index;
 
-    const startIndex = uncachedItems[0].index;
-    const stopIndex = uncachedItems[uncachedItems.length - 1].index;
+    console.warn(
+      `Last measured index: [${this.m_LastMeasuredIndex}]. Updating offsets for items`,
+      measuredItems
+    );
 
-    if (startIndex > lastMeasuredIndex) {
-      // Get the delta from last measured Index.
-      let uncachedItemCount =
-        this.m_LastMeasuredIndex == -1 ? 0 : startIndex - lastMeasuredIndex;
+    // TODO: It might be possible to get this value earlier, e.g. when calculating stop index
+    //       from start index in variable size list class.
+    const previousItemIndex = measuredRangeStartIndex - 1;
+    let firstItemOffsetTop =
+      this.m_OffsetStorage.getOffsetEnd(previousItemIndex);
 
-      let unmeasuredItemsOffset = uncachedItemCount * itemDefaultHeight;
+    let newCalculatedOffsetEnds = this._getCalculatedOffsetEnds(
+      measuredItems,
+      firstItemOffsetTop
+    );
 
-      const firstItemStartPos = lastMeasuredOffsetEnd + unmeasuredItemsOffset;
+    this.m_OffsetStorage.addOffsetEnds(newCalculatedOffsetEnds);
 
-      let currentItemStartPos = firstItemStartPos;
+    console.error(
+      `Updating last measured index from ${this.m_LastMeasuredIndex} -> ${measuredRangeStopIndex}`
+    );
 
-      let newOffsets = uncachedItems.map((item) => {
-        const { index, height } = item;
-        let itemEnd = currentItemStartPos + height;
-        currentItemStartPos = itemEnd;
-
-        return { index: index, offsetEnd: itemEnd };
-      });
-
-      this.m_OffsetStorage.add(startIndex, stopIndex, newOffsets);
-
-      this.m_LastMeasuredIndex = stopIndex;
-    } else if (startIndex < lastMeasuredIndex) {
-      console.log("Rendered items was less than last measured index");
-      // Some of the items have not been measured, get the delta
-    }
+    this.m_lastMeasuredOffsetEnd =
+      newCalculatedOffsetEnds[newCalculatedOffsetEnds.length - 1].offsetEnd;
+    this.m_LastMeasuredIndex = measuredRangeStopIndex;
   }
 
   /**
-   * Gets the items end position, i.e. its offset + height.
+   * Gets the items offset top position.
    */
   public getItemOffset(index: number, height: number) {
-    let itemOffsetEnd = this.m_OffsetStorage.getOffset(index);
+    let itemOffsetEnd = this.m_OffsetStorage.getOffsetEnd(index);
     let itemOffset = itemOffsetEnd - height;
     return itemOffset;
   }
-}
 
-type Offset = number;
-
-interface OffsetGroup {
-  startIndex: number;
-  stopIndex: number;
-  offsets: Offset[];
-}
-
-type IndexOffsetRange = { index: number; offsetEnd: number }[];
-
-class OffsetStorage {
-  private m_OffsetGroups: OffsetGroup[];
-
-  constructor() {
-    this.m_OffsetGroups = [];
-  }
-
-  public add(
-    newRangeStartIndex: number,
-    newRangeStopIndex: number,
-    indexOffsetRange: IndexOffsetRange
+  private _getCalculatedOffsetEnds(
+    measuredItems: MeasuredItem[],
+    previousItemOffsetEnd: number
   ) {
-    console.log("Adding to offset storage", indexOffsetRange);
-    const lastGroupIndex = this.m_OffsetGroups.length - 1;
-    const hasGroups = this.m_OffsetGroups.length > 0;
-    const lastOffsetGroupStopIndex = hasGroups
-      ? this.m_OffsetGroups[lastGroupIndex].stopIndex
-      : -1;
+    let currentItemStartPos = previousItemOffsetEnd;
 
-    if (newRangeStartIndex > lastOffsetGroupStopIndex) {
-      const nextConnectedIndex = lastOffsetGroupStopIndex + 1;
-      let rangeIsConnectedToLastGroup =
-        newRangeStartIndex == nextConnectedIndex;
+    let newOffsets = measuredItems.map((item) => {
+      const { index, height } = item;
+      let itemOffsetEnd = currentItemStartPos + height;
+      currentItemStartPos = itemOffsetEnd;
 
-      if (hasGroups && rangeIsConnectedToLastGroup) {
-        // Merge the values to the last measured groups
-        let lastMeasuredGroup = this.m_OffsetGroups[lastGroupIndex];
-        let newGroupOffsets = indexOffsetRange.map((i) => i.offsetEnd);
+      return { index: index, offsetEnd: itemOffsetEnd };
+    });
 
-        // Update the last measured group.
-        lastMeasuredGroup = {
-          ...lastMeasuredGroup,
-          stopIndex: newRangeStopIndex,
-          offsets: [...lastMeasuredGroup.offsets, ...newGroupOffsets],
-        };
-
-        return;
-      }
-
-      let groupOffsets = indexOffsetRange.map((i) => i.offsetEnd);
-      let newLastMeasuredGroup: OffsetGroup = {
-        startIndex: newRangeStartIndex,
-        stopIndex: newRangeStopIndex,
-        offsets: groupOffsets,
-      };
-
-      this.m_OffsetGroups.push(newLastMeasuredGroup);
-
-      return;
-    }
-
-    // The new offset range is less that what has been previously stored in the cache.
-    // This will invalidate everything after the new range's stop index.
-
-    // 1. If new offset range is more than any offset group, then create new disconnected group.
-
-    // 2. Find intersecting offset groups and possibly merge if intersects...
-    // 3. If new offset range is less than any offset group then invalidate/remove those groups from cache.
-  }
-
-  public getOffset(index: number) {
-    if (index < 0) {
-      return 0;
-    }
-
-    const lastGroupIndex = this.m_OffsetGroups.length - 1;
-    const hasGroups = this.m_OffsetGroups.length > 0;
-
-    if (!hasGroups) {
-      return index * itemDefaultHeight + itemDefaultHeight;
-    }
-
-    const lastOffsetGroup = this.m_OffsetGroups[lastGroupIndex];
-    const lastMeasuredOffset =
-      lastOffsetGroup.offsets[lastOffsetGroup.offsets.length - 1];
-
-    if (index > lastOffsetGroup.stopIndex) {
-      let unmeasuredItemsCount = index - lastOffsetGroup.stopIndex;
-      let unmeasuredOffset = unmeasuredItemsCount * itemDefaultHeight;
-      let partiallyMeasuredOffset = lastMeasuredOffset + unmeasuredOffset;
-      return partiallyMeasuredOffset;
-    }
-
-    const { containingGroupIndex, lastMeasuredGroupIndex } =
-      this._findNearestItemBinarySearch(
-        this.m_OffsetGroups.length - 1,
-        0,
-        index
-      );
-
-    if (containingGroupIndex != null) {
-      const containingGroup = this.m_OffsetGroups[containingGroupIndex];
-      const containedOffsetIndex = index - containingGroup.startIndex;
-      const measuredOffset = containingGroup.offsets[containedOffsetIndex];
-      return measuredOffset;
-    } else {
-      const previousGroup = this.m_OffsetGroups[lastMeasuredGroupIndex];
-      const previousGroupsLastMeasuredOffset = previousGroup
-        ? previousGroup.offsets[previousGroup.offsets.length - 1]
-        : 0;
-
-      const previousGroupStopIndex = previousGroup
-        ? previousGroup.stopIndex
-        : 0;
-      let unmeasuredItemsCount = index - previousGroupStopIndex;
-      let unmeasuredOffset = unmeasuredItemsCount * itemDefaultHeight;
-      let partiallyMeasuredOffset =
-        previousGroupsLastMeasuredOffset + unmeasuredOffset;
-
-      return partiallyMeasuredOffset;
-    }
-  }
-
-  private _findNearestItemBinarySearch(
-    high: number,
-    low: number,
-    targetIndex: number
-  ): { containingGroupIndex: number; lastMeasuredGroupIndex: number } {
-    const containedInGroup = (itemIndex: number, group: OffsetGroup) => {
-      return itemIndex >= group.startIndex && itemIndex <= group.stopIndex;
-    };
-
-    let middle: number;
-
-    while (low <= high) {
-      middle = low + Math.floor((high - low) / 2);
-
-      const currentGroup = this.m_OffsetGroups[middle];
-      const isContainedInGroup = containedInGroup(targetIndex, currentGroup);
-
-      if (isContainedInGroup) {
-        return { containingGroupIndex: middle, lastMeasuredGroupIndex: null };
-      } else if (currentGroup.startIndex < targetIndex) {
-        low = middle + 1;
-      } else if (currentGroup.startIndex > targetIndex) {
-        high = middle - 1;
-      }
-    }
-
-    return { containingGroupIndex: null, lastMeasuredGroupIndex: middle - 1 };
+    return newOffsets;
   }
 }
