@@ -1,11 +1,16 @@
 import createListComponent, { IScrollable } from "./createListComponent";
-import { Props, ScrollToAlign } from "./listComponent.types";
+import {
+  Props,
+  ScrollToAlign,
+  ItemInfoForOffset,
+  StopItemInfoForOffset,
+} from "./listComponent.types";
 const DEFAULT_ESTIMATED_ITEM_SIZE = 100;
 export type VariableSizeProps = Props<any> & {
   estimatedItemSize: number;
-  getItemMetaData: (index: number) => ItemMetadata;
+  getItemHeight: (index: number) => number;
+  getItemOffset: (index: number) => number;
 };
-type ItemSizeGetter = (index: number) => { size: number; loaded: boolean };
 
 export type ItemMetadata = {
   offset: number;
@@ -19,107 +24,50 @@ type InstanceProps = {
   lastMeasuredIndex: number;
 };
 
-const getItemMetadata = (
-  props: Props<any>,
-  itemIndex: number,
-  instanceProps: InstanceProps
-): ItemMetadata => {
-  const { getItemMetaData } = props as VariableSizeProps;
-
-  const meta = getItemMetaData(itemIndex);
-
-  return meta;
-
-  // const { itemMetadataMap, lastMeasuredIndex } = instanceProps;
-
-  // if (itemIndex > lastMeasuredIndex) {
-  //   let offset = 0;
-
-  //   if (lastMeasuredIndex >= 0) {
-  //     const lastMeasuredItemMetadata = itemMetadataMap[lastMeasuredIndex];
-  //     offset =
-  //       lastMeasuredItemMetadata.offset + lastMeasuredItemMetadata.height;
-  //   }
-
-  //   for (let i = lastMeasuredIndex + 1; i <= itemIndex; i++) {
-  //     let itemSizeGetter = getItemSize as ItemSizeGetter;
-  //     // This used pre measure all rows.
-  //     let { size, loaded } = { loaded: true, size: 100 }; // itemSizeGetter(i);
-
-  //     itemMetadataMap[i] = {
-  //       offset,
-  //       height: size,
-  //       // loadedDuringMeasure: loaded,
-  //     };
-  //     offset += size;
-
-  //     if (loaded) {
-  //       instanceProps.lastMeasuredIndex = itemIndex;
-  //     }
-  //   }
-  // }
-
-  // return itemMetadataMap[itemIndex];
-};
-
 const _getStartIndexForOffset = (
   props: Props<any>,
   instanceProps: InstanceProps,
   offset: number
-): number => {
-  // const { itemMetadataMap /*, lastMeasuredIndex*/ } = instanceProps;
-  // const lastMeasuredIndex = -1;
-  // console.log("Find Start index lastMesauredIndex", lastMeasuredIndex);
-
-  // const lastMeasuredItemOffset =
-  //   lastMeasuredIndex > 0 ? itemMetadataMap[lastMeasuredIndex].offset : 0;
-
-  let high = props.itemCount - 1; // lastMeasuredIndex;
+): ItemInfoForOffset => {
+  let high = props.itemCount - 1;
   let low = 0;
 
-  // if (offset > lastMeasuredItemOffset) {
-  //   // If we haven't yet measured this high, fallback to an exponential search with an inner binary search.
-  //   // The exponential search avoids pre-computing sizes for the full set of items as a binary search would.
-  //   // The overall complexity for this approach is O(log n).
-  //   const searchRange = _getBinarySearcRangeByExponentialSearch(
-  //     props,
-  //     instanceProps,
-  //     Math.max(0, lastMeasuredIndex),
-  //     lastMeasuredItemOffset,
-  //     offset
-  //   );
-
-  //   low = searchRange.low;
-  //   high = searchRange.high;
-  // }
-
-  // If we've already measured items within this range just use a binary search as it's faster.
   const nearestItemIndex = _findNearestItemBinarySearch(
-    props,
+    props as VariableSizeProps,
     instanceProps,
     high,
     low,
     offset
   );
 
-  console.log("Start Renderable Index: ", nearestItemIndex);
+  // console.log("Start Renderable Index: ", nearestItemIndex);
 
   return nearestItemIndex;
 };
 
 const _findNearestItemBinarySearch = (
-  props: Props<any>,
+  props: VariableSizeProps,
   instanceProps: InstanceProps,
   high: number,
   low: number,
   offset: number
-): number => {
+): ItemInfoForOffset => {
   while (low <= high) {
     const middle = low + Math.floor((high - low) / 2);
-    const currentOffset = getItemMetadata(props, middle, instanceProps).offset;
+    const currentOffset = props.getItemOffset(middle);
+    // const currentOffset = getItemMetadata(props, middle, instanceProps).offset;
 
     if (currentOffset === offset) {
-      return middle;
+      // This will be the first start/first item in the rendered view.
+      // Make sure that it is properly measured and cache is updated accordingly.
+      props.onJITMeasurement(props, middle, middle);
+      const measuredHeight = props.getItemHeight(middle);
+      return {
+        index: middle,
+        offsetTop: currentOffset,
+        height: measuredHeight,
+      };
+      // return middle;
     } else if (currentOffset < offset) {
       low = middle + 1;
     } else if (currentOffset > offset) {
@@ -128,40 +76,55 @@ const _findNearestItemBinarySearch = (
   }
 
   if (low > 0) {
-    return low - 1;
+    // return low - 1;
+    let ind = low - 1;
+    const off = props.getItemOffset(ind);
+    const hei = props.getItemHeight(ind);
+    return { index: ind, offsetTop: off, height: hei };
   } else {
-    return 0;
+    return { index: 0, offsetTop: 0, height: props.getItemHeight(0) };
   }
 };
 
-const _getBinarySearcRangeByExponentialSearch = (
-  listProps: Props<any>,
-  instanceProps: InstanceProps,
-  startIndex: number,
-  startOffset: number,
-  offset: number
-): { low: number; high: number } => {
-  const { itemCount } = listProps;
+const _getStopIndexForStartIndex = (
+  props: Props<any>,
+  startItemInfo: ItemInfoForOffset,
+  scrollOffset: number,
+  instanceProps: InstanceProps
+): StopItemInfoForOffset => {
+  const { direction, height, itemCount, layout, width, getItemHeight } =
+    props as VariableSizeProps;
+  // TODO Deprecate direction "horizontal"
+  const isHorizontal = direction === "horizontal" || layout === "horizontal";
+  const size = (isHorizontal ? width : height) as any as number;
+  // const itemMetadata = getItemMetadata(props, startIndex, instanceProps);
 
-  let interval = 1;
-  let currentIndex = startIndex;
-  let currentItemOffset = startOffset;
+  const {
+    index: startItemIndex,
+    offsetTop: startItemOffset,
+    height: startItemHeight,
+  } = startItemInfo;
 
-  while (currentIndex < itemCount && currentItemOffset < offset) {
-    currentItemOffset = getItemMetadata(
-      listProps,
-      currentIndex,
-      instanceProps
-    ).offset;
+  const maxOffset = scrollOffset + size;
 
-    currentIndex += interval;
-    interval *= 2;
+  let currentItemOffset = startItemOffset + startItemHeight;
+  let stopIndex = startItemIndex;
+  let itemMeasurementInfos: ItemInfoForOffset[] = [startItemInfo];
+
+  while (stopIndex < itemCount - 1 && currentItemOffset < maxOffset) {
+    // measure if needed
+    stopIndex++;
+    props.onJITMeasurement(props, stopIndex, stopIndex);
+    const nextItemHeight = getItemHeight(stopIndex);
+    itemMeasurementInfos.push({
+      index: stopIndex,
+      offsetTop: currentItemOffset,
+      height: nextItemHeight,
+    });
+    currentItemOffset += nextItemHeight;
   }
 
-  const high = Math.min(currentIndex, itemCount - 1);
-  const low = Math.floor(currentIndex / 2);
-
-  return { low, high };
+  return { stopIndex: stopIndex, itemMeasurementInfos: itemMeasurementInfos };
 };
 
 const getEstimatedTotalSize = (
@@ -189,19 +152,24 @@ const getEstimatedTotalSize = (
 
 const VariableSizeList = createListComponent({
   onloadedItemsRendered: (props, startIndex, stopIndex) => {
-    const {} = props;
     props.onForceUpdateLoadedItems(props, startIndex, stopIndex);
   },
   getItemOffset: (
     props: Props<any>,
     index: number,
     instanceProps: InstanceProps
-  ): number => getItemMetadata(props, index, instanceProps).offset,
-  getItemSize: (
-    props: Props<any>,
-    index: number,
-    instanceProps: InstanceProps
-  ): number => getItemMetadata(props, index, instanceProps).height,
+  ): number => {
+    const { getItemOffset } = props as VariableSizeProps;
+    return getItemOffset(index);
+  },
+  // getItemSize: (
+  //   props: Props<any>,
+  //   index: number,
+  //   instanceProps: InstanceProps
+  // ): number => {
+  //   const { getItemHeight } = props as VariableSizeProps;
+  //   return getItemHeight(index);
+  // },
   getEstimatedTotalSize,
   getOffsetForIndexAndAlignment: (
     props: Props<any>,
@@ -210,23 +178,23 @@ const VariableSizeList = createListComponent({
     scrollOffset: number,
     instanceProps: InstanceProps
   ): number => {
-    const { direction, height, layout, width } = props;
+    const { direction, height, layout, width, getItemOffset, getItemHeight } =
+      props as VariableSizeProps;
     // TODO Deprecate direction "horizontal"
     const isHorizontal = direction === "horizontal" || layout === "horizontal";
     const size = (isHorizontal ? width : height) as any as number;
-    const itemMetadata = getItemMetadata(props, index, instanceProps);
+    // const itemMetadata = getItemMetadata(props, index, instanceProps);
+    const targetItemHeight = getItemHeight(index);
+    const targetItemOffset = getItemOffset(index);
 
     // Get estimated total size after ItemMetadata is computed,
     // To ensure it reflects actual measurements instead of just estimates.
     const estimatedTotalSize = getEstimatedTotalSize(props, instanceProps);
     const maxOffset = Math.max(
       0,
-      Math.min(estimatedTotalSize - size, itemMetadata.offset)
+      Math.min(estimatedTotalSize - size, targetItemOffset)
     );
-    const minOffset = Math.max(
-      0,
-      itemMetadata.offset - size + itemMetadata.height
-    );
+    const minOffset = Math.max(0, targetItemOffset - size + targetItemHeight);
 
     if (align === "smart") {
       if (
@@ -264,31 +232,19 @@ const VariableSizeList = createListComponent({
     props: Props<any>,
     offset: number,
     instanceProps: InstanceProps
-  ): number => _getStartIndexForOffset(props, instanceProps, offset),
+  ): ItemInfoForOffset => _getStartIndexForOffset(props, instanceProps, offset),
   getStopIndexForStartIndex: (
     props: Props<any>,
-    startIndex: number,
+    startItemInfo: ItemInfoForOffset,
     scrollOffset: number,
     instanceProps: InstanceProps
-  ): number => {
-    const { direction, height, itemCount, layout, width } = props;
-    // TODO Deprecate direction "horizontal"
-    const isHorizontal = direction === "horizontal" || layout === "horizontal";
-    const size = (isHorizontal ? width : height) as any as number;
-    const itemMetadata = getItemMetadata(props, startIndex, instanceProps);
-    const maxOffset = scrollOffset + size;
-
-    let offset = itemMetadata.offset + itemMetadata.height;
-    let stopIndex = startIndex;
-
-    while (stopIndex < itemCount - 1 && offset < maxOffset) {
-      stopIndex++;
-      offset += getItemMetadata(props, stopIndex, instanceProps).height;
-    }
-
-    return stopIndex;
-  },
-
+  ): StopItemInfoForOffset =>
+    _getStopIndexForStartIndex(
+      props,
+      startItemInfo,
+      scrollOffset,
+      instanceProps
+    ),
   initInstanceProps(props: Props<any>, instance: any): InstanceProps {
     const { estimatedItemSize } = props as any as VariableSizeProps;
     const instanceProps = {
@@ -322,16 +278,16 @@ const VariableSizeList = createListComponent({
   },
 
   shouldResetStyleCacheOnItemSizeChange: false,
-  validateProps: ({ itemSize }: Props<any>): void => {
-    if (process.env.NODE_ENV !== "production") {
-      if (typeof itemSize !== "function") {
-        throw Error(
-          'An invalid "itemSize" prop has been specified. ' +
-            "Value should be a function. " +
-            `"${itemSize === null ? "null" : typeof itemSize}" was specified.`
-        );
-      }
-    }
+  validateProps: (/*{ itemSize }: Props<any>*/): void => {
+    // if (process.env.NODE_ENV !== "production") {
+    //   if (typeof itemSize !== "function") {
+    //     throw Error(
+    //       'An invalid "itemSize" prop has been specified. ' +
+    //         "Value should be a function. " +
+    //         `"${itemSize === null ? "null" : typeof itemSize}" was specified.`
+    //     );
+    //   }
+    // }
   },
 });
 

@@ -51,7 +51,6 @@ const Row = ({ index, style }: any, itemHeight: number) => {
 
   // let cachedRowHeight = getRowHeight(index);
   // let words = getWords(index);
-
   let words = null;
 
   return (

@@ -15,7 +15,7 @@ interface NoLimitListProps {
   style: CSSProperties;
   itemCount: number;
   defaultItemHeight: number;
-  shouldItemBeMeasured?: (index: number) => boolean;
+  isItemLoaded?: (index: number) => boolean;
   onItemsRendered?: onItemsRenderedCallback;
   ref?: (ref: any) => void;
   setRef?: (ref: any) => void;
@@ -99,8 +99,11 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
               innerRef={virtualizingContainerRef}
               height={height}
               width={width}
+              isItemLoaded={(index: number) => {
+                return props.isItemLoaded(index);
+              }}
               shouldItemBeMeasured={(index: number) => {
-                return props.shouldItemBeMeasured(index);
+                return props.isItemLoaded(index);
               }}
               itemCount={itemCount}
               onItemsRendered={handleItemsRendered}

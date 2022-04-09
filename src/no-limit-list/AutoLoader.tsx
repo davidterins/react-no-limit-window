@@ -56,11 +56,11 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
     );
   };
 
-  const isItemLo = (index) => {
+  const isItemLo = (index: number) => {
     return pageCollection.isItemLoaded(index);
   };
 
-  const loadMoreIt = (start, stop) => {
+  const loadMoreIt = (start: number, stop: number) => {
     return pageCollection.loadMoreItems(start, stop);
   };
   return (
@@ -75,7 +75,7 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
           style={listStyle}
           itemCount={itemCount}
           defaultItemHeight={100}
-          shouldItemBeMeasured={isItemLo}
+          isItemLoaded={(index) => isItemLo(index)}
           onItemsRendered={onItemsRendered}
           // getItemHeight={(index) => getRowHeight(index)}
           setRef={ref}

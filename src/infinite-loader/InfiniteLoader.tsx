@@ -122,7 +122,6 @@ export default class InfiniteLoader extends PureComponent<Props> {
       )
     ) {
       this._memoizedUnloadedRanges = unloadedRanges;
-
       this._loadUnloadedRanges(unloadedRanges);
     }
   }

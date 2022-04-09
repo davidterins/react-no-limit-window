@@ -2,10 +2,10 @@ import { $Shape } from "utility-types";
 import { IScrollable } from "./createListComponent";
 
 export type ScrollToAlign = "auto" | "smart" | "center" | "start" | "end";
-export type itemSize =
-  | number
-  | ((index: number) => number)
-  | ((index: number) => { size: number; loaded: boolean });
+// export type itemSize =
+//   | number
+//   | ((index: number) => number)
+//   | ((index: number) => { size: number; loaded: boolean });
 // TODO Deprecate directions "horizontal" and "vertical"
 export type Direction = "ltr" | "rtl" | "horizontal" | "vertical";
 export type Layout = "horizontal" | "vertical";
@@ -43,6 +43,12 @@ export type InnerProps = {
   style: Record<string, unknown>;
 };
 
+export type ItemMeasurementMeta = {
+  index: number;
+  height: number;
+  offset: number;
+};
+
 export type Props<T> = {
   children: RenderComponent<T>;
   className?: string;
@@ -56,10 +62,20 @@ export type Props<T> = {
   itemCount: number;
   itemData: T;
   itemKey?: (index: number, data: T) => any;
-  itemSize: itemSize;
+  // itemSize: itemSize;
   layout: Layout;
   onItemsRendered?: onItemsRenderedCallback;
-  onForceUpdateLoadedItems(props: Props<any>, startIndex: number, stopIndex: number)
+  onForceUpdateLoadedItems: (
+    props: Props<any>,
+    startIndex: number,
+    stopIndex: number
+  ) => void;
+  onJITMeasurement: (
+    props: Props<any>,
+    startIndex: number,
+    stopIndex: number
+  ) => void;
+  isItemLoaded: (index: number) => boolean;
   onScroll?: onScrollCallback;
   outerRef?: any;
   outerTagName?: string;
@@ -102,12 +118,24 @@ export type GetStartIndexForOffset = (
   props: Props<any>,
   offset: number,
   instanceProps: any
-) => number;
-export type GetStopIndexForStartIndex = (
+) => ItemInfoForOffset;
+export type GetStopItemInfosForStartIndex = (
   props: Props<any>,
-  startIndex: number,
+  startItemInfo: ItemInfoForOffset,
   scrollOffset: number,
   instanceProps: any
-) => number;
+) => StopItemInfoForOffset;
+
 export type InitInstanceProps = (props: Props<any>, instance: any) => any;
 export type ValidateProps = (props: Props<any>) => void;
+
+export type ItemInfoForOffset = {
+  index: number;
+  offsetTop: number;
+  height: number;
+};
+
+export type StopItemInfoForOffset = {
+  stopIndex: number;
+  itemMeasurementInfos: ItemInfoForOffset[];
+};
