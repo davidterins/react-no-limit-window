@@ -35,7 +35,7 @@ interface MergeTwoExistingGroupsAction extends GroupActionBase {
   mergingGroupIndices: { first: number; second: number };
 }
 
-export type IndexOffset = { index: number; offsetEnd: number };
+export type IndexOffset = { index: number; offsetEnd: number; height: number };
 
 export class OffsetStorage {
   private m_OffsetGroups: OffsetGroup[];
@@ -58,6 +58,7 @@ export class OffsetStorage {
   public addOffsetEnds(indexOffsetRange: IndexOffset[]) {
     const groupAction = this._detmermineGroupAction(indexOffsetRange);
     const offsets = indexOffsetRange.map((i) => i.offsetEnd);
+    const heights = indexOffsetRange.map((i) => i.height);
 
     switch (groupAction.actionType) {
       case "AppendToExistingGroup": {
@@ -65,7 +66,11 @@ export class OffsetStorage {
         break;
       }
       case "PrependToExistingGroup": {
-        this._handlePrependToExistingGroup(groupAction as PrependToExistingGroupAction, offsets);
+        this._handlePrependToExistingGroup(
+          groupAction as PrependToExistingGroupAction,
+          offsets,
+          heights
+        );
         break;
       }
       case "MergeTwoExistingGroups": {
@@ -98,18 +103,31 @@ export class OffsetStorage {
     }
   }
 
-  private _handlePrependToExistingGroup(action: PrependToExistingGroupAction, offsets: number[]) {
+  private _handlePrependToExistingGroup(
+    action: PrependToExistingGroupAction,
+    offsets: number[],
+    heights: number[]
+  ) {
     const { prependedGroupIndex } = action;
     const prependingGroup = this.m_OffsetGroups[prependedGroupIndex];
     const isLastGroup = prependedGroupIndex == this.m_OffsetGroups.length - 1;
 
-    prependingGroup.offsets = [...offsets]; //.unshift(...offsets);
-    prependingGroup.stopIndex = prependingGroup.startIndex - 1;
-    prependingGroup.startIndex = prependingGroup.startIndex - offsets.length;
-    // TODO: This will invalidate all offsets after the new ones,
+    // TODO - Done: This will invalidate all offsets after the new ones,
     //       so update offsets of some maybe 50 of the following items and cut the group?
-    // prependingGroup.offsets.unshift(...offsets);
-    // prependingGroup.startIndex = prependingGroup.startIndex - offsets.length;
+    let newItemsDefaultHeightSum = offsets.length * this.m_itemDefaultHeight;
+    let newItemsMeasuredHeightSum = heights.reduce((partialSum, a) => partialSum + a, 0);
+    let deltaHeightChange = newItemsMeasuredHeightSum - newItemsDefaultHeightSum;
+
+    if (prependingGroup.offsets.length > 50) {
+      prependingGroup.offsets.length = 50;
+    }
+
+    for (let i = 0; i < prependingGroup.offsets.length; i++) {
+      prependingGroup.offsets[i] += deltaHeightChange;
+    }
+
+    prependingGroup.offsets.unshift(...offsets);
+    prependingGroup.startIndex = prependingGroup.startIndex - offsets.length;
 
     if (!isLastGroup) {
       // Delete rest of the groups as their offset are invalidated.
