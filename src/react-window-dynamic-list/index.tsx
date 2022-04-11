@@ -42,6 +42,8 @@ const DynamicList = (
     width,
     cache,
     isItemLoaded,
+    onItemsRendered,
+    onVirtualizedHeightChanged,
     lazyMeasurement = true,
     recalculateItemsOnResize = { width: true, height: true },
     // measurementContainerElement = defaultMeasurementContainer,
@@ -228,6 +230,15 @@ const DynamicList = (
     <VariableSizeList
       layout="vertical"
       ref={listRef}
+      onItemsRendered={(props) => {
+        if (itemCount > 0) {
+          let lastItemHeight = getItemHeight(itemCount - 1);
+          let lastItemOffset = getItemOffset(itemCount - 1);
+          let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
+          onVirtualizedHeightChanged(lastItemOffsetEnd);
+        }
+        onItemsRendered(props);
+      }}
       onJITMeasurement={handleJITMeasurement}
       getItemHeight={getItemHeight}
       getItemOffset={getItemOffset}

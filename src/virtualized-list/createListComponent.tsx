@@ -478,8 +478,8 @@ export default function createListComponent({
 
       let containerStyle: CSSProperties = {
         height: "100%",
+        width: "100%",
         pointerEvents: isScrolling ? "none" : undefined,
-        width: isHorizontal ? estimatedTotalSize : "100%",
       };
 
       let virtualizedItemsContainer = createElement("div", {

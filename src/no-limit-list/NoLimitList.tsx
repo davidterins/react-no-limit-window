@@ -2,10 +2,7 @@ import React, { CSSProperties, useEffect, useRef, useState } from "react";
 import Scrollbar from "../scrollbar";
 import { IScrollable } from "../virtualized-list/createListComponent";
 import AutoSizer from "react-virtualized-auto-sizer";
-import {
-  onItemsRenderedCallback,
-  RenderComponent,
-} from "../virtualized-list/listComponent.types";
+import { onItemsRenderedCallback, RenderComponent } from "../virtualized-list/listComponent.types";
 import DynamicList, { createCache } from "../react-window-dynamic-list";
 import { IScrollBar } from "../scrollbar/Scrollbars";
 
@@ -25,9 +22,7 @@ interface NoLimitListProps {
 const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   const { style, itemCount, defaultItemHeight, children } = props;
   const cache = createCache();
-  const [virtualizedHeight, setVirtHeight] = useState<number>(
-    itemCount * defaultItemHeight
-  );
+  const [virtualizedHeight, setVirtHeight] = useState<number>(itemCount * defaultItemHeight);
 
   // const virtualizedHeight = itemCount * defaultItemHeight;
 
@@ -55,7 +50,6 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     if (props.onItemsRendered) {
       props.onItemsRendered(args);
 
-      
       // const cachedItemCount = cache.getNumberOfCachedItems();
       // const cachedHeight = cache.getTotalCachedItemHeight();
 
@@ -100,6 +94,11 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
               innerRef={virtualizingContainerRef}
               height={height}
               width={width}
+              onVirtualizedHeightChanged={(height: number) => {
+                // TODO : Maybe set scroll speed here as well.
+                let scrollbarElement = ScrollBarRef.current as IScrollBar;
+                scrollbarElement?.setScrollHeight(height);
+              }}
               isItemLoaded={(index: number) => {
                 return props.isItemLoaded(index);
               }}

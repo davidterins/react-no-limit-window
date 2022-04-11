@@ -92,8 +92,7 @@ const _getStopIndexForStartIndex = (
   scrollOffset: number,
   instanceProps: InstanceProps
 ): StopItemInfoForOffset => {
-  const { direction, height, itemCount, layout, width, getItemHeight } =
-    props as VariableSizeProps;
+  const { direction, height, itemCount, layout, width, getItemHeight } = props as VariableSizeProps;
   // TODO Deprecate direction "horizontal"
   const isHorizontal = direction === "horizontal" || layout === "horizontal";
   const size = (isHorizontal ? width : height) as any as number;
@@ -128,9 +127,18 @@ const _getStopIndexForStartIndex = (
 };
 
 const getEstimatedTotalSize = (
-  { itemCount }: Props<any>,
+  props: Props<any>,
   { itemMetadataMap, estimatedItemSize, lastMeasuredIndex }: InstanceProps
 ) => {
+  return 0;
+  let { itemCount, getItemOffset, getItemHeight } = props as VariableSizeProps;
+  if (itemCount <= 0) return 0;
+
+  let lastItemHeight = getItemHeight(itemCount - 1);
+  let lastItemOffset = getItemOffset(itemCount - 1);
+  let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
+  console.error("List height", lastItemOffsetEnd);
+  return lastItemOffsetEnd;
   let totalSizeOfMeasuredItems = 0;
 
   // Edge case check for when the number of items decreases while a scroll is in progress.
@@ -154,11 +162,7 @@ const VariableSizeList = createListComponent({
   onloadedItemsRendered: (props, startIndex, stopIndex) => {
     props.onForceUpdateLoadedItems(props, startIndex, stopIndex);
   },
-  getItemOffset: (
-    props: Props<any>,
-    index: number,
-    instanceProps: InstanceProps
-  ): number => {
+  getItemOffset: (props: Props<any>, index: number, instanceProps: InstanceProps): number => {
     const { getItemOffset } = props as VariableSizeProps;
     return getItemOffset(index);
   },
@@ -190,17 +194,11 @@ const VariableSizeList = createListComponent({
     // Get estimated total size after ItemMetadata is computed,
     // To ensure it reflects actual measurements instead of just estimates.
     const estimatedTotalSize = getEstimatedTotalSize(props, instanceProps);
-    const maxOffset = Math.max(
-      0,
-      Math.min(estimatedTotalSize - size, targetItemOffset)
-    );
+    const maxOffset = Math.max(0, Math.min(estimatedTotalSize - size, targetItemOffset));
     const minOffset = Math.max(0, targetItemOffset - size + targetItemHeight);
 
     if (align === "smart") {
-      if (
-        scrollOffset >= minOffset - size &&
-        scrollOffset <= maxOffset + size
-      ) {
+      if (scrollOffset >= minOffset - size && scrollOffset <= maxOffset + size) {
         align = "auto";
       } else {
         align = "center";
@@ -239,12 +237,7 @@ const VariableSizeList = createListComponent({
     scrollOffset: number,
     instanceProps: InstanceProps
   ): StopItemInfoForOffset =>
-    _getStopIndexForStartIndex(
-      props,
-      startItemInfo,
-      scrollOffset,
-      instanceProps
-    ),
+    _getStopIndexForStartIndex(props, startItemInfo, scrollOffset, instanceProps),
   initInstanceProps(props: Props<any>, instance: any): InstanceProps {
     const { estimatedItemSize } = props as any as VariableSizeProps;
     const instanceProps = {
@@ -253,15 +246,9 @@ const VariableSizeList = createListComponent({
       lastMeasuredIndex: -1,
     };
 
-    instance.resetAfterIndex = (
-      index: number,
-      shouldForceUpdate: boolean = true
-    ) => {
+    instance.resetAfterIndex = (index: number, shouldForceUpdate: boolean = true) => {
       console.log("RESET AFTER INDEX");
-      instanceProps.lastMeasuredIndex = Math.min(
-        instanceProps.lastMeasuredIndex,
-        index - 1
-      );
+      instanceProps.lastMeasuredIndex = Math.min(instanceProps.lastMeasuredIndex, index - 1);
 
       // We could potentially optimize further by only evicting styles after this index,
       // But since styles are only cached while scrolling is in progress-
