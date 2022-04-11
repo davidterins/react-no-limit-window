@@ -15,6 +15,12 @@ export class DynamicOffsetCache {
     this.m_OffsetStorage = new OffsetStorage(itemDefaultHeight);
   }
 
+  public Clear() {
+    this.m_LastMeasuredIndex = -1;
+    this.m_lastMeasuredOffsetEnd = 0;
+    this.m_OffsetStorage = new OffsetStorage(itemDefaultHeight);
+  }
+
   public UpdateOffsets(measuredItems: MeasuredItem[]) {
     if (measuredItems.length == 0) return;
 

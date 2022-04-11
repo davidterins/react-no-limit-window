@@ -112,7 +112,7 @@ export class OffsetStorage {
     const prependingGroup = this.m_OffsetGroups[prependedGroupIndex];
     const isLastGroup = prependedGroupIndex == this.m_OffsetGroups.length - 1;
 
-    // TODO - Done: This will invalidate all offsets after the new ones,
+    // TODO - [Done]: This will invalidate all offsets after the new ones,
     //       so update offsets of some maybe 50 of the following items and cut the group?
     let newItemsDefaultHeightSum = offsets.length * this.m_itemDefaultHeight;
     let newItemsMeasuredHeightSum = heights.reduce((partialSum, a) => partialSum + a, 0);

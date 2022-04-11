@@ -9,10 +9,7 @@ import useShareForwardedRef from "./utils/useShareForwardRefs";
 import measureElement, { destroyMeasureLayer } from "./asyncMeasurer";
 import { defaultMeasurementContainer } from "./defaultMeasurementContainer";
 import { DynamicOffsetCache, MeasuredItem } from "./DynamicOffsetCache";
-import {
-  ItemMeasurementMeta,
-  Props,
-} from "../virtualized-list/listComponent.types";
+import { ItemMeasurementMeta, Props } from "../virtualized-list/listComponent.types";
 
 type DynamicSizeProps<T> = VariableSizeProps & {
   cache: HeightCache;
@@ -82,10 +79,7 @@ const DynamicList = (
       children: ItemContainer,
     });
 
-    const { height: measuredHeight } = measureElement(
-      MeasurementContainer,
-      debug
-    );
+    const { height: measuredHeight } = measureElement(MeasurementContainer, debug);
     return measuredHeight;
   };
 
@@ -121,6 +115,7 @@ const DynamicList = (
     console.log("Handling list resize!");
     if (listRef.current) {
       heightCache.clearCache();
+      dynamicOffsetCache.Clear();
       listRef.current.resetAfterIndex(0);
       lazyCacheFill();
     }
