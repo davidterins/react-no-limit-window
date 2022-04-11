@@ -55,6 +55,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     if (props.onItemsRendered) {
       props.onItemsRendered(args);
 
+      
       // const cachedItemCount = cache.getNumberOfCachedItems();
       // const cachedHeight = cache.getTotalCachedItemHeight();
 

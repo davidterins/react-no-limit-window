@@ -77,7 +77,6 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({
           defaultItemHeight={100}
           isItemLoaded={(index) => isItemLo(index)}
           onItemsRendered={onItemsRendered}
-          // getItemHeight={(index) => getRowHeight(index)}
           setRef={ref}
         >
           {(args) => RenderItem(args, 100)}

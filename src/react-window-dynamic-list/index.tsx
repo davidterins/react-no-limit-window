@@ -93,6 +93,8 @@ const DynamicList = (
       return;
     }
 
+    // Returning here solves freezing issue during lists initialization when there are like 100k+ items.
+    return;
     for (var i = 0; i < itemCount; i++) {
       if (isItemLoaded(i)) {
         return;
