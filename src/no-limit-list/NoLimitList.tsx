@@ -49,24 +49,6 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   }) => {
     if (props.onItemsRendered) {
       props.onItemsRendered(args);
-
-      // const cachedItemCount = cache.getNumberOfCachedItems();
-      // const cachedHeight = cache.getTotalCachedItemHeight();
-
-      // let sum = cachedHeight;
-      // // let cachedHeights = 0;
-      // // for (let key in cache._values) {
-      // //   sum += cache._values[key].height;
-      // //   cachedHeights += 1;
-      // // }
-
-      // let uncachedRows = itemCount - cachedItemCount;
-      // let uncachedHeight = uncachedRows * defaultItemHeight;
-
-      // let scrollbarElement = ScrollBarRef.current as IScrollBar;
-
-      // // console.log("Values:", cache.values);
-      // scrollbarElement?.setScrollHeight(sum + uncachedHeight);
     }
   };
 

@@ -94,25 +94,6 @@ const DynamicList = (
     if (!lazyMeasurement) {
       return;
     }
-
-    // Returning here solves freezing issue during lists initialization when there are like 100k+ items.
-    return;
-    for (var i = 0; i < itemCount; i++) {
-      if (isItemLoaded(i)) {
-        return;
-      }
-      // We use set timeout here in order to execute the measuring in a background thread.
-      setTimeout(() => {
-        if (!heightCache.get(i)) {
-          const height = measureIndex(i);
-
-          // Double check in case the main thread already populated this id
-          if (!heightCache.get(i)) {
-            heightCache.addHeight({ index: i, height: height });
-          }
-        }
-      }, 0);
-    }
   };
 
   const handleListResize = debounce(() => {
@@ -211,8 +192,6 @@ const DynamicList = (
 
     // 3. Update offset cache based on the freshly measured items.
     dynamicOffsetCache.UpdateOffsets(measuredItems);
-
-    // TODO/Question: Get the total height here and update vertical scroll height?
   };
 
   const getItemHeight = (index: number) => {
