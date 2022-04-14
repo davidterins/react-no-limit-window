@@ -12,7 +12,6 @@ type DynamicSizeProps<T> = VariableSizeProps & {
   cache: HeightCache;
   lazyMeasurement: boolean;
   data: T;
-  shouldItemBeMeasured: (index: number) => boolean;
   recalculateItemsOnResize: { width: boolean; height: boolean };
   debug: boolean;
 };
