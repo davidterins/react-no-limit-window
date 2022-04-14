@@ -3,11 +3,16 @@ import Scrollbar from "../scrollbar";
 import { IScrollable } from "../virtualized-list/createListComponent";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { onItemsRenderedCallback, RenderComponent } from "../virtualized-list/listComponent.types";
-import DynamicList, { createCache } from "../react-window-dynamic-list";
+import DynamicList from "../react-window-dynamic-list";
 import { IScrollBar } from "../scrollbar/Scrollbars";
 import debounce from "lodash.debounce";
+import HeightCache from "../react-window-dynamic-list/cache";
+import { DynamicOffsetCache } from "../react-window-dynamic-list/DynamicOffsetCache";
 
 const lineHeight = 20;
+
+const createHeightCache = (knownSizes = {}) => new HeightCache(knownSizes);
+const createOffsetCache = () => new DynamicOffsetCache();
 
 interface NoLimitListProps {
   style: CSSProperties;
@@ -22,10 +27,12 @@ interface NoLimitListProps {
 
 const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   const { style, itemCount, defaultItemHeight, children } = props;
-  const cache = createCache();
+  const heightCache = createHeightCache();
+  const offsetCache = createOffsetCache();
+  let lastRenderedIndices: number[] = [];
+
   const [virtualizedHeight, setVirtHeight] = useState<number>(itemCount * defaultItemHeight);
 
-  // const virtualizedHeight = itemCount * defaultItemHeight;
   let currentWidth = -1;
 
   const listRef = useRef();
@@ -49,7 +56,12 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     visibleStartIndex: number;
     visibleStopIndex: number;
   }) => {
+    const { visibleStartIndex, visibleStopIndex } = args;
     if (props.onItemsRendered) {
+      lastRenderedIndices = [];
+      for (let i = visibleStartIndex; i <= visibleStopIndex; i++) {
+        lastRenderedIndices.push();
+      }
       props.onItemsRendered(args);
     }
   };
@@ -59,18 +71,17 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   }, []);
 
   const handleListResize = debounce(() => {
-    console.log("Handling list resize!");
     let scrollbarElement = ScrollBarRef.current as IScrollBar;
-    scrollbarElement?.setScrollPos(8000);
-    //TODO: Clear caches
-    //TODO: Handle height resize
+    heightCache.clearCache();
+    offsetCache.Clear();
+    if (lastRenderedIndices.length > 0) {
+      const firstRenderedIndex = lastRenderedIndices[0];
+      let itemHeight = heightCache.get(firstRenderedIndex);
+      let offset = offsetCache.getItemOffset(firstRenderedIndex, itemHeight);
+      scrollbarElement?.setScrollPos(offset);
+    }
 
-    // if (listRef.current) {
-    //   // heightCache.clearCache();
-    //   // dynamicOffsetCache.Clear();
-    //   // listRef.current.resetAfterIndex(0);
-    //   // lazyCacheFill();
-    // }
+    //TODO: Handle height resize
   }, 50);
 
   return (
@@ -95,7 +106,8 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
             ref={ScrollBarRef}
           >
             <DynamicList
-              cache={cache}
+              heightCache={heightCache}
+              offsetCache={offsetCache}
               ref={listRef}
               innerRef={virtualizingContainerRef}
               height={height}

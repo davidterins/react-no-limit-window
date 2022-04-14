@@ -1,8 +1,5 @@
 import React, { forwardRef, useEffect, useLayoutEffect } from "react";
-import VariableSizeList, {
-  ItemMetadata,
-  VariableSizeProps,
-} from "../virtualized-list/VariableSizeList";
+import VariableSizeList, { VariableSizeProps } from "../virtualized-list/VariableSizeList";
 import debounce from "lodash.debounce";
 import HeightCache from "./cache";
 import useShareForwardedRef from "./utils/useShareForwardRefs";
@@ -21,26 +18,19 @@ type DynamicSizeProps<T> = VariableSizeProps & {
 };
 
 /**
- * Create the dynamic list's cache object.
- * @param {Object} knownSizes a mapping between an items id and its size.
- */
-export const createCache = (knownSizes = {}) => new HeightCache(knownSizes);
-
-const dynamicOffsetCache = new DynamicOffsetCache();
-
-/**
  * A virtualized list which handles item of varying sizes.
  * Read the implementation section in the README for additional information on the general algorithm.
  */
 const DynamicList = (
   {
+    heightCache,
+    offsetCache,
     children,
     data,
     itemCount,
     itemData,
     height,
     width,
-    cache,
     isItemLoaded,
     onItemsRendered,
     onVirtualizedHeightChanged,
@@ -53,7 +43,9 @@ const DynamicList = (
   }: any,
   ref: any
 ) => {
-  const heightCache = cache as HeightCache;
+  const hCache = heightCache as HeightCache;
+  const oCache = offsetCache as DynamicOffsetCache;
+
   const listRef = useShareForwardedRef(ref);
   const containerResizeDeps = [];
 
@@ -130,7 +122,7 @@ const DynamicList = (
   useEffect(() => {
     if (listRef.current) {
       listRef.current.resetAfterIndex = (index, shouldForceUpdate = true) => {
-        heightCache.clearCache();
+        hCache.clearCache();
         lazyCacheFill();
         listRef.current._resetAfterIndex(index, shouldForceUpdate);
       };
@@ -168,7 +160,7 @@ const DynamicList = (
     // 1. Make sure that the indices have measured heights
     for (let i = startIndex; i <= stopIndex; i++) {
       const itemIsLoaded = isItemLoaded(i);
-      const uncachedHeight = !heightCache.has(i);
+      const uncachedHeight = !hCache.has(i);
       if (itemIsLoaded && uncachedHeight) {
         // If an item is loaded and have not yet been measured,
         // then add it to the list of indices to be measured.
@@ -181,7 +173,7 @@ const DynamicList = (
     // 2. Measure the unmeasured items.
     let measuredItems: MeasuredItem[] = unmeasuredIndices.map((index) => {
       let measuredHeight = measureIndex(index); // Item pre-measurement...
-      heightCache.addHeight({ index, height: measuredHeight });
+      hCache.addHeight({ index, height: measuredHeight });
 
       let measuredItem: MeasuredItem = {
         index,
@@ -191,7 +183,7 @@ const DynamicList = (
     });
 
     // 3. Update offset cache based on the freshly measured items.
-    dynamicOffsetCache.UpdateOffsets(measuredItems);
+    oCache.UpdateOffsets(measuredItems);
   };
 
   const getItemHeight = (index: number) => {
@@ -200,8 +192,8 @@ const DynamicList = (
   };
 
   const getItemOffset = (index: number) => {
-    let itemHeight = heightCache.get(index);
-    let itemOffsetTop = dynamicOffsetCache.getItemOffset(index, itemHeight);
+    let itemHeight = hCache.get(index);
+    let itemOffsetTop = oCache.getItemOffset(index, itemHeight);
     return itemOffsetTop;
   };
 
