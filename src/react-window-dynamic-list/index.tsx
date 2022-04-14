@@ -97,13 +97,13 @@ const DynamicList = (
   };
 
   const handleListResize = debounce(() => {
-    console.log("Handling list resize!");
-    if (listRef.current) {
-      heightCache.clearCache();
-      dynamicOffsetCache.Clear();
-      listRef.current.resetAfterIndex(0);
-      lazyCacheFill();
-    }
+    // console.log("Handling list resize!");
+    // if (listRef.current) {
+    //   heightCache.clearCache();
+    //   dynamicOffsetCache.Clear();
+    //   listRef.current.resetAfterIndex(0);
+    //   lazyCacheFill();
+    // }
   }, 50);
 
   /**

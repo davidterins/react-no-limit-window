@@ -5,6 +5,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { onItemsRenderedCallback, RenderComponent } from "../virtualized-list/listComponent.types";
 import DynamicList, { createCache } from "../react-window-dynamic-list";
 import { IScrollBar } from "../scrollbar/Scrollbars";
+import debounce from "lodash.debounce";
 
 const lineHeight = 20;
 
@@ -25,6 +26,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   const [virtualizedHeight, setVirtHeight] = useState<number>(itemCount * defaultItemHeight);
 
   // const virtualizedHeight = itemCount * defaultItemHeight;
+  let currentWidth = -1;
 
   const listRef = useRef();
   const virtualizingContainerRef = useRef();
@@ -56,11 +58,33 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     props.setRef(listRef);
   }, []);
 
+  const handleListResize = debounce(() => {
+    console.log("Handling list resize!");
+    let scrollbarElement = ScrollBarRef.current as IScrollBar;
+    scrollbarElement?.setScrollPos(8000);
+    //TODO: Clear caches
+    //TODO: Handle height resize
+
+    // if (listRef.current) {
+    //   // heightCache.clearCache();
+    //   // dynamicOffsetCache.Clear();
+    //   // listRef.current.resetAfterIndex(0);
+    //   // lazyCacheFill();
+    // }
+  }, 50);
+
   return (
     <AutoSizer style={style}>
       {({ height, width }) => {
         const scrollSpeed = (height / virtualizedHeight) * lineHeight;
 
+        if (currentWidth == -1) {
+          currentWidth = width;
+        }
+
+        if (currentWidth != width) {
+          handleListResize();
+        }
         return (
           <Scrollbar
             onScroll={handleScroll}

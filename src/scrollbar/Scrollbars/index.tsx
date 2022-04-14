@@ -69,6 +69,7 @@ interface ScrollInfo {
 
 export interface IScrollBar {
   setScrollHeight: (scrollHeight: number) => void;
+  setScrollPos: (newScrollPos: number) => void;
 }
 
 export default class Scrollbar extends Component<ScrollbarProps, State> implements IScrollBar {
@@ -157,10 +158,67 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     this.handleDrag = this.handleDrag.bind(this);
     this.handleDragEnd = this.handleDragEnd.bind(this);
     this.setScrollHeight = this.setScrollHeight.bind(this);
+    this.setScrollPos = this.setScrollPos.bind(this);
 
     this.state = {
       didMountUniversal: false,
     };
+  }
+
+  setScrollPos(virtualizedOffset: number) {
+    let percentage = virtualizedOffset / this.virtualizedHeight;
+    let offset = this.viewPort.clientHeight * percentage;
+    this.fakeScrollTop = this.getScrollTopForOffset(offset);
+
+    this.update(0, (updatedScrollArgs) => {
+      const { nativeScrollStatus, customScrollStatus } = updatedScrollArgs;
+
+      // const { customScrollTop, scrollLeft, scrollTop, scrollHeight } = values;
+      // this.viewScrollLeft = customScrollStatus;
+      this.viewScrollTop = customScrollStatus.scrollTop;
+
+      this.customScrollStatus = customScrollStatus;
+      this.nativeScrollStatus = nativeScrollStatus;
+
+      // this.nativeScrollStatus.scrollTop = scrollTop;
+
+      // console.log("scrollheight: " + this.viewPort.scrollHeight);
+      // console.log("height: " + this.viewPort.clientHeight);
+      // console.log("offsetHeight: " + this.viewPort.offsetHeight);
+      // this.nativeScrollAtBottom =
+      //   this.nativeScrollTop + this.viewPort.clientHeight ==
+      //   this.viewPort.scrollHeight;
+
+      // // console.log("BOTTOM: " + this.nativeScrollAtBottom);
+
+      // if(this.nativeScrollAtBottom && vie)
+
+      // this.syncScrollStatus(customScrollTop, scrollTop);
+
+      const clampedScrollTop = this.clamp(
+        this.customScrollStatus.scrollTop,
+        0,
+        this.virtualizedHeight - this.getThumbVerticalHeight()
+        // this.props.virtualizedScrollHeight - this.getThumbVerticalHeight()
+      );
+
+      if (clampedScrollTop == NaN) {
+        throw `Sroll top Nan`;
+      }
+
+      this.props.onScroll(
+        this.viewPort.clientHeight,
+        this.virtualizedHeight,
+        // this.props.virtualizedScrollHeight,
+        clampedScrollTop
+      );
+      // Add this to update child view.
+      // (this.testRef as IScrollable).Scrolla(
+      //   this.viewPort.clientHeight,
+      //   this.props.virtualizedScrollHeight,
+      //   this.customScrollStatus.scrollTop
+      // );
+    });
   }
 
   setScrollHeight(scrollHeight: number) {
@@ -381,7 +439,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
   }
 
   handleWindowResize() {
-    this.update();
+    // this.update();
   }
 
   handleHorizontalTrackMouseDown(event) {
