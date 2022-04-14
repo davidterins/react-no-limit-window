@@ -27,13 +27,13 @@ interface NoLimitListProps {
 
 const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   const { style, itemCount, defaultItemHeight, children } = props;
+  let currentWidth = -1;
+  let currentHeight = -1;
   const heightCache = createHeightCache();
   const offsetCache = createOffsetCache();
   let lastRenderedIndices: number[] = [];
 
   const [virtualizedHeight, setVirtHeight] = useState<number>(itemCount * defaultItemHeight);
-
-  let currentWidth = -1;
 
   const listRef = useRef();
   const virtualizingContainerRef = useRef();
@@ -60,7 +60,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     if (props.onItemsRendered) {
       lastRenderedIndices = [];
       for (let i = visibleStartIndex; i <= visibleStopIndex; i++) {
-        lastRenderedIndices.push();
+        lastRenderedIndices.push(i);
       }
       props.onItemsRendered(args);
     }
@@ -70,19 +70,21 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     props.setRef(listRef);
   }, []);
 
-  const handleListResize = debounce(() => {
-    let scrollbarElement = ScrollBarRef.current as IScrollBar;
-    heightCache.clearCache();
-    offsetCache.Clear();
-    if (lastRenderedIndices.length > 0) {
-      const firstRenderedIndex = lastRenderedIndices[0];
-      let itemHeight = heightCache.get(firstRenderedIndex);
-      let offset = offsetCache.getItemOffset(firstRenderedIndex, itemHeight);
-      scrollbarElement?.setScrollPos(offset);
-    }
-
-    //TODO: Handle height resize
-  }, 50);
+  const handleListResize = (lastRenderedIndices: number[]) => {
+    const k = debounce(() => {
+      let scrollbarElement = ScrollBarRef.current as IScrollBar;
+      heightCache.clearCache();
+      offsetCache.Clear();
+      if (lastRenderedIndices.length > 0) {
+        const firstRenderedIndex = lastRenderedIndices[0];
+        let itemHeight = heightCache.get(firstRenderedIndex);
+        let offset = offsetCache.getItemOffset(firstRenderedIndex, itemHeight);
+        console.error("Resize scroll to offset:", offset);
+        scrollbarElement?.setScrollPos(offset);
+      }
+    }, 50);
+    k();
+  };
 
   return (
     <AutoSizer style={style}>
@@ -92,9 +94,16 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
         if (currentWidth == -1) {
           currentWidth = width;
         }
+        if (currentHeight == -1) {
+          currentHeight = height;
+        }
 
         if (currentWidth != width) {
-          handleListResize();
+          handleListResize(lastRenderedIndices);
+        }
+        if (currentHeight != height) {
+          //TODO: handle height changes.
+          // handleListResize();
         }
         return (
           <Scrollbar
@@ -118,9 +127,6 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
                 scrollbarElement?.setScrollHeight(height);
               }}
               isItemLoaded={(index: number) => {
-                return props.isItemLoaded(index);
-              }}
-              shouldItemBeMeasured={(index: number) => {
                 return props.isItemLoaded(index);
               }}
               itemCount={itemCount}

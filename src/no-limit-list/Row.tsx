@@ -50,14 +50,14 @@ const Row = ({ index, style }: any, itemHeight: number) => {
   // };
 
   // let cachedRowHeight = getRowHeight(index);
-  // let words = getWords(index);
-  let words = null;
+  let words = getWords(index);
+  // let words = null;
 
   return (
     <div
       style={{
         ...style,
-        height: 148,
+        // height: 148,
         border: "solid red 1px",
       }}
     >
