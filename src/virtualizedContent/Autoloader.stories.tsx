@@ -1,9 +1,6 @@
 import React from "react";
 import { Story, Meta } from "@storybook/react";
-import {
-  AutoLoaderList,
-  AutoLoaderListProps,
-} from "../no-limit-list/AutoLoader";
+import { AutoLoaderList, AutoLoaderListProps } from "../no-limit-list/AutoLoader";
 import { PageCollection } from "../paging/PageCollection";
 
 export default {

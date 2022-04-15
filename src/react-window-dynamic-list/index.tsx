@@ -8,14 +8,6 @@ import { defaultMeasurementContainer } from "./defaultMeasurementContainer";
 import { DynamicOffsetCache, MeasuredItem } from "./DynamicOffsetCache";
 import { ItemMeasurementMeta, Props } from "../virtualized-list/listComponent.types";
 
-type DynamicSizeProps<T> = VariableSizeProps & {
-  cache: HeightCache;
-  lazyMeasurement: boolean;
-  data: T;
-  recalculateItemsOnResize: { width: boolean; height: boolean };
-  debug: boolean;
-};
-
 /**
  * A virtualized list which handles item of varying sizes.
  * Read the implementation section in the README for additional information on the general algorithm.

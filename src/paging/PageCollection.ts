@@ -66,21 +66,19 @@ export class PageCollection implements IPageCollection<ListItem> {
       // console.log("Request fetched11");
       return new Promise<void>(async (resolve, reject) => {
         // console.Console;
-        let pageFetchPromises = Array.from(containedPageIndices.keys()).map(
-          (pageIndex) => {
-            return new Promise<number>((resolve, reject) => {
-              setTimeout(() => {
-                let fetchingPage = this.pages.get(pageIndex);
+        let pageFetchPromises = Array.from(containedPageIndices.keys()).map((pageIndex) => {
+          return new Promise<number>((resolve, reject) => {
+            setTimeout(() => {
+              let fetchingPage = this.pages.get(pageIndex);
 
-                fetchingPage.items = new Array(this.pageSize).fill({
-                  content: "hejhej",
-                });
+              fetchingPage.items = new Array(this.pageSize).fill({
+                content: "hejhej",
+              });
 
-                resolve(pageIndex);
-              }, 2000);
-            });
-          }
-        );
+              resolve(pageIndex);
+            }, 2000);
+          });
+        });
 
         containedPageIndices.forEach((pageIndex) => {
           this.pages.get(pageIndex).status = "requested";
@@ -91,9 +89,7 @@ export class PageCollection implements IPageCollection<ListItem> {
         fetchedPageIndices.forEach((pageIndex) => {
           const pageStartIndex = pageIndex * this.pageSize;
           const pageStopIndex = pageStartIndex + this.pageSize - 1;
-          console.log(
-            `- height loaded page with ${pageStartIndex} -> ${pageStopIndex}`
-          );
+          console.log(`- height loaded page with ${pageStartIndex} -> ${pageStopIndex}`);
           this.pages.get(pageIndex).status = "loaded";
         });
 
