@@ -85,12 +85,12 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   };
 
   useEffect(() => {
+    props.setRef(listRef);
     if (!mounted.current) {
       // Component did mount
       mounted.current = true;
       // setInitialScroll(initialScrollOffset);
     } else {
-      props.setRef(listRef);
     }
   });
 
