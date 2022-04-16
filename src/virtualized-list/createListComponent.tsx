@@ -39,9 +39,8 @@ if (process.env.NODE_ENV !== "production") {
   }
 }
 
-export interface IScrollable {
-  Scrolla: (clientHeight: number, scrollHeight: number, scrollTop: number) => void;
-  ScrollToItem: (offset: number) => void;
+export interface IListView {
+  SetViewPort: (clientHeight: number, scrollHeight: number, scrollTop: number) => void;
 }
 export interface IPreMeasuredForceRender {
   preMeasuredForceRender: (startIndex: number, stopIndex: number) => void;
@@ -74,7 +73,7 @@ export default function createListComponent({
   // return class List<T> extends PureComponent<Props<T>, State> {
   return class List<T>
     extends PureComponent<Props<T>, State>
-    implements IScrollable, IPreMeasuredForceRender
+    implements IListView, IPreMeasuredForceRender
   {
     _instanceProps: any = initInstanceProps(this.props, this);
     _outerRef: HTMLDivElement | null | undefined;
@@ -109,8 +108,8 @@ export default function createListComponent({
       this.forceUpdate();
     };
 
-    public Scrolla(clientHeight: number, scrollHeight: number, scrollTop: number) {
-      // console.log(`zz Scrolla: ${clientHeight}, ${scrollHeight}, ${scrollTop}`);
+    public SetViewPort(clientHeight: number, scrollHeight: number, scrollTop: number) {
+      // console.log(`zz SetViewPort: ${clientHeight}, ${scrollHeight}, ${scrollTop}`);
       this._onScrollVertical(clientHeight, scrollHeight, scrollTop);
     }
 
@@ -354,7 +353,13 @@ export default function createListComponent({
         }
       }
 
-      // console.warn("visibility states: ", visiblityStates);
+      if (visiblityStates.filter((s) => s.visibleState == "start-cut").length > 1) {
+        console.error("multiple start-cut visibility states in viewport ", visiblityStates);
+      }
+
+      // if (visiblityStates.filter((s) => s.visibleState == "end-cut").length > 1) {
+      //   console.error("multiple end-cut visibility states in viewport ", visiblityStates);
+      // }
 
       visiblityStates.forEach((item) => {
         const listItemStart = item.style.top as number;

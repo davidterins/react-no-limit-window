@@ -1,4 +1,4 @@
-import createListComponent, { IScrollable } from "./createListComponent";
+import createListComponent, { IListView } from "./createListComponent";
 import {
   Props,
   ScrollToAlign,
@@ -52,25 +52,33 @@ const _findNearestItemBinarySearch = (
   low: number,
   offset: number
 ): ItemInfoForOffset => {
+  const rowContainsOffset = (rowStart: number, rowStop: number, offset: number) => {
+    if (offset >= rowStart && offset <= rowStop) {
+      return true;
+    }
+    return false;
+  };
   while (low <= high) {
     const middle = low + Math.floor((high - low) / 2);
-    const currentOffset = props.getItemOffset(middle);
-    // const currentOffset = getItemMetadata(props, middle, instanceProps).offset;
+    const currentItemHeight = props.getItemHeight(middle);
+    const currentItemOffsetStart = props.getItemOffset(middle);
+    const currentItemOffsetEnd = currentItemOffsetStart + currentItemHeight;
 
-    if (currentOffset === offset) {
+    // if (currentItemOffsetStart === offset) {
+    if (rowContainsOffset(currentItemOffsetStart, currentItemOffsetEnd, offset)) {
       // This will be the first start/first item in the rendered view.
       // Make sure that it is properly measured and cache is updated accordingly.
       props.onJITMeasurement(props, middle, middle);
       const measuredHeight = props.getItemHeight(middle);
       return {
         index: middle,
-        offsetTop: currentOffset,
+        offsetTop: currentItemOffsetStart,
         height: measuredHeight,
       };
       // return middle;
-    } else if (currentOffset < offset) {
+    } else if (currentItemOffsetEnd < offset) {
       low = middle + 1;
-    } else if (currentOffset > offset) {
+    } else if (currentItemOffsetStart > offset) {
       high = middle - 1;
     }
   }

@@ -1,6 +1,6 @@
 import React, { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Scrollbar from "../scrollbar";
-import { IScrollable } from "../virtualized-list/createListComponent";
+import { IListView } from "../virtualized-list/createListComponent";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { onItemsRenderedCallback, RenderComponent } from "../virtualized-list/listComponent.types";
 import DynamicList from "../react-window-dynamic-list";
@@ -49,22 +49,22 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     virtualizedScrollHeight: number,
     scrollTop: number
   ) => {
-    const scrollableHandle = listRef?.current as IScrollable;
-    if (!scrollableHandle && !initialScroll) {
+    const listView = listRef?.current as IListView;
+    if (!listView && !initialScroll) {
       // The list ref may not have been mounted yet before this is called,
       // which is needed to call the scroll method on the list view. So set the state
       // of this component to make sure it gets loaded, before performing an inital scroll.
       setInitialScroll({ clientHeight, virtualizedScrollHeight, scrollTop });
     } else {
-      scrollableHandle.Scrolla(clientHeight, virtualizedScrollHeight, scrollTop);
+      listView.SetViewPort(clientHeight, virtualizedScrollHeight, scrollTop);
     }
   };
 
   useEffect(() => {
     if (initialScroll) {
       const { clientHeight, virtualizedScrollHeight, scrollTop } = initialScroll;
-      const scrollableHandle = listRef?.current as IScrollable;
-      scrollableHandle.Scrolla(clientHeight, virtualizedScrollHeight, scrollTop);
+      const listView = listRef?.current as IListView;
+      listView.SetViewPort(clientHeight, virtualizedScrollHeight, scrollTop);
     }
   }, [initialScroll]);
 
@@ -87,9 +87,7 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   useEffect(() => {
     props.setRef(listRef);
     if (!mounted.current) {
-      // Component did mount
       mounted.current = true;
-      // setInitialScroll(initialScrollOffset);
     } else {
     }
   });

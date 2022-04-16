@@ -1,6 +1,5 @@
-import React, { forwardRef, useEffect, useLayoutEffect } from "react";
-import VariableSizeList, { VariableSizeProps } from "../virtualized-list/VariableSizeList";
-import debounce from "lodash.debounce";
+import React, { forwardRef, useEffect } from "react";
+import VariableSizeList from "../virtualized-list/VariableSizeList";
 import HeightCache from "./cache";
 import useShareForwardedRef from "./utils/useShareForwardRefs";
 import measureElement, { destroyMeasureLayer } from "./asyncMeasurer";
@@ -25,27 +24,13 @@ const DynamicList = (
     isItemLoaded,
     onItemsRendered,
     onVirtualizedHeightChanged,
-    lazyMeasurement = true,
-    recalculateItemsOnResize = { width: true, height: true },
-    // measurementContainerElement = defaultMeasurementContainer,
-    debug = false,
-
     ...variableSizeListProps
   }: any,
   ref: any
 ) => {
   const hCache = heightCache as HeightCache;
   const oCache = offsetCache as DynamicOffsetCache;
-
   const listRef = useShareForwardedRef(ref);
-  const containerResizeDeps = [];
-
-  if (recalculateItemsOnResize.width) {
-    containerResizeDeps.push(width);
-  }
-  if (recalculateItemsOnResize.height) {
-    containerResizeDeps.push(height);
-  }
 
   /**
    * Measure a specific item.
@@ -64,79 +49,20 @@ const DynamicList = (
       children: ItemContainer,
     });
 
-    const { height: measuredHeight } = measureElement(MeasurementContainer, debug);
+    const { height: measuredHeight } = measureElement(MeasurementContainer, false);
     return measuredHeight;
   };
-
-  /**
-   * Measure all of the items in the background.
-   * This could be a little tough in the site in the first seconds however it allows
-   * fast jumping.
-   */
-  const lazyCacheFill = () => {
-    if (!lazyMeasurement) {
-      return;
-    }
-  };
-
-  const handleListResize = debounce(() => {
-    // console.log("Handling list resize!");
-    // if (listRef.current) {
-    //   heightCache.clearCache();
-    //   dynamicOffsetCache.Clear();
-    //   listRef.current.resetAfterIndex(0);
-    //   lazyCacheFill();
-    // }
-  }, 50);
 
   /**
    * Initiate cache filling and handle cleanup of measurement layer.
    * In addition cache the old implementation of the overridden functions.
    */
   useEffect(() => {
-    lazyCacheFill();
     if (listRef.current) {
       listRef.current._resetAfterIndex = listRef.current.resetAfterIndex;
     }
     return destroyMeasureLayer;
   }, []);
-
-  /**
-   * This component shares the listRef (ref to VariableSizeList) with its users - read useShareForwardRef.js for more
-   * info. This sharing comes at a cost - if users call VariableSizeList functions directly we cant adjust accordingly.
-   * In order to inject our custom code without effecting our API we added the overriding functionality as seen bellow:
-   * resetAfterIndex - Add the clearing of our cache as well as VariableSizeList cache.
-   *
-   * lazyCacheFill is deliberately not wrapped with useCallback - It isn't expensive to overwrite resetAfterIndex every
-   * render and it allows us to make sure that all of the values in lazyCacheFilter are up to date.
-   */
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.resetAfterIndex = (index, shouldForceUpdate = true) => {
-        hCache.clearCache();
-        lazyCacheFill();
-        listRef.current._resetAfterIndex(index, shouldForceUpdate);
-      };
-    }
-  }, [lazyCacheFill]);
-
-  /**
-   * Recalculate items size of the list size has changed.
-   */
-  useLayoutEffect(() => {
-    if (containerResizeDeps.length > 0) {
-      handleListResize();
-    }
-  }, containerResizeDeps);
-
-  /**
-   * In case the data length changed we need to reassign the current size to all of the indexes.
-   */
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.resetAfterIndex(0);
-    }
-  }, [itemCount]);
 
   const handleJITMeasurement = (
     props: Props<any>,

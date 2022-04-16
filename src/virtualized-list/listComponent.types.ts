@@ -1,5 +1,5 @@
 import { $Shape } from "utility-types";
-import { IScrollable } from "./createListComponent";
+import { IListView } from "./createListComponent";
 
 export type ScrollToAlign = "auto" | "smart" | "center" | "start" | "end";
 // export type itemSize =
@@ -15,9 +15,7 @@ export type RenderComponentProps<T> = {
   isScrolling?: boolean;
   style: Record<string, any>;
 };
-export type RenderComponent<T> = React.ComponentType<
-  $Shape<RenderComponentProps<T>>
->;
+export type RenderComponent<T> = React.ComponentType<$Shape<RenderComponentProps<T>>>;
 export type ScrollDirection = "forward" | "backward";
 export type onItemsRenderedCallback = (arg0: {
   overscanStartIndex: number;
@@ -57,7 +55,7 @@ export type Props<T> = {
   initialScrollOffset?: number;
   innerRef?: any;
   innerTagName?: string;
-  // setRef?: (ref: IScrollable) => void;
+  // setRef?: (ref: IListView) => void;
   // deprecated
   itemCount: number;
   itemData: T;
@@ -65,16 +63,8 @@ export type Props<T> = {
   // itemSize: itemSize;
   layout: Layout;
   onItemsRendered?: onItemsRenderedCallback;
-  onForceUpdateLoadedItems: (
-    props: Props<any>,
-    startIndex: number,
-    stopIndex: number
-  ) => void;
-  onJITMeasurement: (
-    props: Props<any>,
-    startIndex: number,
-    stopIndex: number
-  ) => void;
+  onForceUpdateLoadedItems: (props: Props<any>, startIndex: number, stopIndex: number) => void;
+  onJITMeasurement: (props: Props<any>, startIndex: number, stopIndex: number) => void;
   isItemLoaded: (index: number) => boolean;
   onScroll?: onScrollCallback;
   outerRef?: any;
@@ -93,20 +83,9 @@ export type State = {
   scrollOffset: number;
   scrollUpdateWasRequested: boolean;
 };
-export type GetItemOffset = (
-  props: Props<any>,
-  index: number,
-  instanceProps: any
-) => number;
-export type GetItemSize = (
-  props: Props<any>,
-  index: number,
-  instanceProps: any
-) => number;
-export type GetEstimatedTotalSize = (
-  props: Props<any>,
-  instanceProps: any
-) => number;
+export type GetItemOffset = (props: Props<any>, index: number, instanceProps: any) => number;
+export type GetItemSize = (props: Props<any>, index: number, instanceProps: any) => number;
+export type GetEstimatedTotalSize = (props: Props<any>, instanceProps: any) => number;
 export type GetOffsetForIndexAndAlignment = (
   props: Props<any>,
   index: number,

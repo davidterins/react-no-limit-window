@@ -351,7 +351,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
         clampedScrollTop
       );
       // Add this to update child view.
-      // (this.testRef as IScrollable).Scrolla(
+      // (this.testRef as IListView).SetViewPort(
       //   this.viewPort.clientHeight,
       //   this.props.virtualizedScrollHeight,
       //   this.customScrollStatus.scrollTop
