@@ -339,19 +339,20 @@ export class OffsetStorage {
     }
 
     return { groupIndex: middle - 1, contained: false };
-    // return { groupIndex: middle - 1, contained: false };
   }
 
   private _findContainingOrPreviousGroupToItemIndex2(
-    high: number,
-    low: number,
+    max: number,
+    min: number,
     targetIndex: number
   ): { groupIndex: number; contained: boolean } {
     const containedInGroup = (itemIndex: number, group: OffsetGroup) => {
       return itemIndex >= group?.startIndex && itemIndex <= group?.stopIndex;
     };
 
-    let middle: number;
+    let high = max;
+    let low = min;
+    let middle = 0;
 
     while (low <= high) {
       middle = low + Math.floor((high - low) / 2);
@@ -363,9 +364,13 @@ export class OffsetStorage {
         return { groupIndex: middle, contained: true };
       } else if (currentGroup.startIndex < targetIndex) {
         low = middle + 1;
-      } else if (currentGroup.startIndex > targetIndex) {
+      } else if (currentGroup.stopIndex > targetIndex) {
         high = middle - 1;
       }
+    }
+
+    if (middle == high) {
+      return { groupIndex: middle, contained: false };
     }
 
     return { groupIndex: middle - 1, contained: false };
