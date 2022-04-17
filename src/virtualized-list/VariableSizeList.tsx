@@ -50,7 +50,7 @@ const _findNearestItemBinarySearch = (
   instanceProps: InstanceProps,
   high: number,
   low: number,
-  offset: number
+  targetOffset: number
 ): ItemInfoForOffset => {
   const rowContainsOffset = (rowStart: number, rowStop: number, offset: number) => {
     if (offset >= rowStart && offset <= rowStop) {
@@ -65,7 +65,7 @@ const _findNearestItemBinarySearch = (
     const currentItemOffsetEnd = currentItemOffsetStart + currentItemHeight;
 
     // if (currentItemOffsetStart === offset) {
-    if (rowContainsOffset(currentItemOffsetStart, currentItemOffsetEnd, offset)) {
+    if (rowContainsOffset(currentItemOffsetStart, currentItemOffsetEnd, targetOffset)) {
       // This will be the first start/first item in the rendered view.
       // Make sure that it is properly measured and cache is updated accordingly.
       props.onJITMeasurement(props, middle, middle);
@@ -76,9 +76,9 @@ const _findNearestItemBinarySearch = (
         height: measuredHeight,
       };
       // return middle;
-    } else if (currentItemOffsetEnd < offset) {
+    } else if (targetOffset > currentItemOffsetEnd) {
       low = middle + 1;
-    } else if (currentItemOffsetStart > offset) {
+    } else if (targetOffset < currentItemOffsetStart) {
       high = middle - 1;
     }
   }

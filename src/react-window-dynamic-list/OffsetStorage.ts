@@ -128,6 +128,7 @@ export class OffsetStorage {
 
     prependingGroup.offsets.unshift(...offsets);
     prependingGroup.startIndex = prependingGroup.startIndex - offsets.length;
+    prependingGroup.stopIndex = prependingGroup.startIndex + prependingGroup.offsets.length - 1;
 
     if (!isLastGroup) {
       // Delete rest of the groups as their offset are invalidated.
@@ -289,14 +290,15 @@ export class OffsetStorage {
       return measuredOffset;
     } else {
       const previousGroup = this.m_OffsetGroups[groupIndex];
+
       const previousGroupsLastMeasuredOffset = previousGroup
         ? previousGroup.offsets[previousGroup.offsets.length - 1]
         : 0;
 
-      const previousGroupStopIndex = previousGroup ? previousGroup.stopIndex : 0;
-      let unmeasuredItemsCount = index - previousGroupStopIndex;
-      let unmeasuredOffset = unmeasuredItemsCount * this.m_itemDefaultHeight;
-      let partiallyMeasuredOffset = previousGroupsLastMeasuredOffset + unmeasuredOffset;
+      const previousGroupStopIndex = previousGroup ? previousGroup.stopIndex : -1;
+      const unmeasuredItemsCount = index - previousGroupStopIndex;
+      const unmeasuredOffset = unmeasuredItemsCount * this.m_itemDefaultHeight;
+      const partiallyMeasuredOffset = previousGroupsLastMeasuredOffset + unmeasuredOffset;
 
       return partiallyMeasuredOffset;
     }

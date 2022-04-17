@@ -340,7 +340,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
         // this.props.virtualizedScrollHeight - this.getThumbVerticalHeight()
       );
 
-      if (clampedScrollTop == NaN) {
+      if (clampedScrollTop === NaN) {
         throw `Sroll top Nan`;
       }
 
