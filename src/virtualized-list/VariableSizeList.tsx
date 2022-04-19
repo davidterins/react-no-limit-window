@@ -139,31 +139,6 @@ const getEstimatedTotalSize = (
   { itemMetadataMap, estimatedItemSize, lastMeasuredIndex }: InstanceProps
 ) => {
   return 0;
-  let { itemCount, getItemOffset, getItemHeight } = props as VariableSizeProps;
-  if (itemCount <= 0) return 0;
-
-  let lastItemHeight = getItemHeight(itemCount - 1);
-  let lastItemOffset = getItemOffset(itemCount - 1);
-  let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
-  console.error("List height", lastItemOffsetEnd);
-  return lastItemOffsetEnd;
-  let totalSizeOfMeasuredItems = 0;
-
-  // Edge case check for when the number of items decreases while a scroll is in progress.
-  // https://github.com/bvaughn/react-window/pull/138
-  if (lastMeasuredIndex >= itemCount) {
-    lastMeasuredIndex = itemCount - 1;
-  }
-
-  if (lastMeasuredIndex >= 0) {
-    const itemMetadata = itemMetadataMap[lastMeasuredIndex];
-    totalSizeOfMeasuredItems = itemMetadata.offset + itemMetadata.height;
-  }
-
-  const numUnmeasuredItems = itemCount - lastMeasuredIndex - 1;
-  const totalSizeOfUnmeasuredItems = numUnmeasuredItems * estimatedItemSize;
-
-  return totalSizeOfMeasuredItems + totalSizeOfUnmeasuredItems;
 };
 
 const VariableSizeList = createListComponent({
