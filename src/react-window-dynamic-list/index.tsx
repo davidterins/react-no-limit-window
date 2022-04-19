@@ -46,7 +46,9 @@ const DynamicList = (
 
     const MeasurementContainer = defaultMeasurementContainer({
       style: {
-        width: width /*- 100* TODO: this solves issue with wrong measurements... exagureated tho*/,
+        width:
+          width -
+          13 /*TODO: check out why 13 works... this solves issue with wrong measurements...*/,
         height,
         overflowY: "scroll",
       },

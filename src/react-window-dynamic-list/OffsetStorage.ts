@@ -87,6 +87,7 @@ export class OffsetStorage {
       default:
         throw "Unknown group action!";
     }
+    console.log(`[${groupAction.actionType}] - Cached offsets:`, this.m_OffsetGroups);
   }
 
   private _handleAppendToExistingGroup(action: AppendToExistingGroupAction, offsets: number[]) {
@@ -145,6 +146,14 @@ export class OffsetStorage {
       offsets: offsets.map((i) => i.offsetEnd),
     };
 
+    const groupSort = (a: OffsetGroup, b: OffsetGroup) => {
+      if (a.startIndex < b.startIndex) {
+        return -1;
+      } else if (a.startIndex > b.startIndex) {
+        return 1;
+      } else return 0;
+    };
+
     if (willBeLastGroup) {
       this.m_OffsetGroups.push(newDisconnectedGroup);
     } else {
@@ -155,6 +164,7 @@ export class OffsetStorage {
       // TODO: This will invalidate all offsets after the new ones,
       //       so update offsets of some maybe 50 of the following items and cut the group?
     }
+    this.m_OffsetGroups.sort(groupSort);
   }
 
   private _handleMergeTwoExistingGroups(action: MergeTwoExistingGroupsAction, offsets: number[]) {
