@@ -1,3 +1,4 @@
-import NoLimitList from "./no-limit-list/NoLimitList";
+import InfiniteLoader from "./infinite-loader/InfiniteLoader";
+import NoLimitList, { createHeightCache } from "./no-limit-list/NoLimitList";
 
-export { NoLimitList };
+export { NoLimitList, InfiniteLoader, createHeightCache };

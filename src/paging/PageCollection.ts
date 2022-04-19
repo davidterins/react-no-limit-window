@@ -76,7 +76,7 @@ export class PageCollection implements IPageCollection<ListItem> {
               });
 
               resolve(pageIndex);
-            }, 2000);
+            }, 500);
           });
         });
 

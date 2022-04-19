@@ -1,15 +1,15 @@
 import * as React from "react";
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties, useEffect, useState } from "react";
 import InfiniteLoader from "../infinite-loader";
 import { NoLimitList } from "..";
 import { IPageCollection } from "../paging/PageCollection";
 import { Row } from "./Row";
+import { createHeightCache } from "./NoLimitList";
 
 const listStyle: CSSProperties = {
   display: "inline-block",
   width: "100%",
   height: "100%",
-  // height: "600px",
   background: "gray",
 };
 
@@ -22,10 +22,14 @@ interface AutoLoaderListProps {
   pageCollection: IPageCollection<ListItem>;
 }
 
-const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ itemCount, pageCollection }) => {
+const heightCache = createHeightCache();
+
+const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ pageCollection }) => {
+  
+  const [itemCount, setItemCount] = useState<number>(100);
   const scrollToIndex = Math.ceil(itemCount / 2);
 
-  const RenderItem = ({ index, style }: any, defaultHeight: number) => {
+  const RenderItem = ({ index, style }: any) => {
     // let isLoading = !pageCollection.isItemLoaded(index);
     let pageState = pageCollection.getPageState(index);
 
@@ -62,7 +66,31 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ itemCount, pageCollecti
     return pageCollection.loadMoreItems(start, stop);
   };
   return (
-    <div style={{ display: "inline-block", width: "90vw", height: "90vh", background: "black" }}>
+    <div
+      style={{
+        display: "inline-block",
+        width: "90vw",
+        height: "90vh",
+        background: "black",
+      }}
+    >
+      <span>
+        <button
+          onClick={() => {
+            setItemCount(itemCount + 10000);
+          }}
+        >
+          add
+        </button>
+        <button
+          onClick={() => {
+            setItemCount(itemCount - 10);
+          }}
+        >
+          remove{" "}
+        </button>
+        <h3 style={{ background: "white" }}>{itemCount}</h3>
+      </span>
       <InfiniteLoader
         isItemLoaded={isItemLo}
         itemCount={itemCount}
@@ -74,12 +102,13 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ itemCount, pageCollecti
             style={listStyle}
             itemCount={itemCount}
             scrollToIndex={scrollToIndex}
+            heightCache={heightCache}
             defaultItemHeight={100}
             isItemLoaded={(index) => isItemLo(index)}
             onItemsRendered={onItemsRendered}
             setRef={ref}
           >
-            {(args) => RenderItem(args, 100)}
+            {(args) => RenderItem(args)}
           </NoLimitList>
         )}
       </InfiniteLoader>

@@ -5,7 +5,10 @@ import useShareForwardedRef from "./utils/useShareForwardRefs";
 import measureElement, { destroyMeasureLayer } from "./asyncMeasurer";
 import { defaultMeasurementContainer } from "./defaultMeasurementContainer";
 import { DynamicOffsetCache, MeasuredItem } from "./DynamicOffsetCache";
-import { ItemMeasurementMeta, Props } from "../virtualized-list/listComponent.types";
+import {
+  ItemMeasurementMeta,
+  Props,
+} from "../virtualized-list/listComponent.types";
 
 /**
  * A virtualized list which handles item of varying sizes.
@@ -55,7 +58,10 @@ const DynamicList = (
       children: ItemContainer,
     });
 
-    const { height: measuredHeight } = measureElement(MeasurementContainer, false);
+    const { height: measuredHeight } = measureElement(
+      MeasurementContainer,
+      false
+    );
     return measuredHeight;
   };
 
@@ -110,7 +116,7 @@ const DynamicList = (
   };
 
   const getItemHeight = (index: number) => {
-    let itemHeight = heightCache.get(index);
+    let itemHeight = hCache.get(index);
     return itemHeight;
   };
 
@@ -120,16 +126,24 @@ const DynamicList = (
     return itemOffsetTop;
   };
 
+  const getTotalHeight = (itemCount: number) => {
+    if (itemCount > 0) {
+      let lastItemHeight = getItemHeight(itemCount - 1);
+      let lastItemOffset = getItemOffset(itemCount - 1);
+      let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
+      return lastItemOffsetEnd;
+    }
+    return itemCount * 100;
+  };
+
   return (
     <VariableSizeList
       layout="vertical"
       ref={listRef}
       onItemsRendered={(props) => {
         if (itemCount > 0) {
-          let lastItemHeight = getItemHeight(itemCount - 1);
-          let lastItemOffset = getItemOffset(itemCount - 1);
-          let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
-          onVirtualizedHeightChanged(lastItemOffsetEnd);
+          let totalHeight = getTotalHeight(itemCount);
+          onVirtualizedHeightChanged(totalHeight);
         }
         onItemsRendered(props);
       }}
