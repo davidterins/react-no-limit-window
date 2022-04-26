@@ -72,7 +72,10 @@ export interface IScrollBar {
   setScrollPos: (newScrollPos: number) => void;
 }
 
-export default class Scrollbar extends Component<ScrollbarProps, State> implements IScrollBar {
+export default class Scrollbar
+  extends Component<ScrollbarProps, State>
+  implements IScrollBar
+{
   testRef: any;
   viewPort: HTMLElement;
   container!: Element;
@@ -86,6 +89,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
   trackMouseOver: boolean = false;
 
   virtualizedHeight: number = 0;
+  scrollSpeed: number = 0;
 
   prevPageX: number = 0;
   prevPageY: number = 0;
@@ -150,10 +154,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
 
     this.handleTrackMouseEnter = this.handleTrackMouseEnter.bind(this);
     this.handleTrackMouseLeave = this.handleTrackMouseLeave.bind(this);
-    this.handleHorizontalTrackMouseDown = this.handleHorizontalTrackMouseDown.bind(this);
-    this.handleVerticalTrackMouseDown = this.handleVerticalTrackMouseDown.bind(this);
-    this.handleHorizontalThumbMouseDown = this.handleHorizontalThumbMouseDown.bind(this);
-    this.handleVerticalThumbMouseDown = this.handleVerticalThumbMouseDown.bind(this);
+    this.handleHorizontalTrackMouseDown =
+      this.handleHorizontalTrackMouseDown.bind(this);
+    this.handleVerticalTrackMouseDown =
+      this.handleVerticalTrackMouseDown.bind(this);
+    this.handleHorizontalThumbMouseDown =
+      this.handleHorizontalThumbMouseDown.bind(this);
+    this.handleVerticalThumbMouseDown =
+      this.handleVerticalThumbMouseDown.bind(this);
     this.handleWindowResize = this.handleWindowResize.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleDrag = this.handleDrag.bind(this);
@@ -188,13 +196,31 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
         throw `Sroll top Nan`;
       }
 
-      this.props.onScroll(this.viewPort.clientHeight, this.virtualizedHeight, clampedScrollTop);
+      this.props.onScroll(
+        this.viewPort.clientHeight,
+        this.virtualizedHeight,
+        clampedScrollTop
+      );
     });
   }
 
-  setScrollHeight(scrollHeight: number) {
-    this.virtualizedHeight = scrollHeight;
-    console.log("SET VERT HEIGHT!", scrollHeight);
+  setScrollHeight(newVirtualizedHeight: number) {
+    console.log("SET VERT HEIGHT!", newVirtualizedHeight);
+    this.virtualizedHeight = newVirtualizedHeight;
+    this.scrollSpeed = (this.props.height / this.virtualizedHeight) * 20;
+
+    const clientHeight = this.getViewPortElementValues().clientHeight;
+    const currentScrollEnd = this.fakeScrollTop + clientHeight;
+
+    if (currentScrollEnd > newVirtualizedHeight) {
+      const scrollTopWithinBoundaries = newVirtualizedHeight - clientHeight;
+      this.fakeScrollTop = scrollTopWithinBoundaries;
+      this.props.onScroll(
+        clientHeight,
+        this.virtualizedHeight,
+        scrollTopWithinBoundaries
+      );
+    }
   }
 
   componentDidMount() {
@@ -216,7 +242,11 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
         if (clampedScrollTop == NaN) {
           throw `Sroll top Nan`;
         }
-        this.props.onScroll(this.viewPort.clientHeight, this.virtualizedHeight, clampedScrollTop);
+        this.props.onScroll(
+          this.viewPort.clientHeight,
+          this.virtualizedHeight,
+          clampedScrollTop
+        );
       });
     } else {
       this.update();
@@ -276,7 +306,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
 
   getThumbVerticalHeight() {
     const { thumbSize, thumbMinSize } = this.props;
-    const { clientHeight } = this.viewPort;
+    const { clientHeight } = this.getViewPortElementValues(); // this.viewPort;
     const scrollHeight = this.virtualizedHeight;
     // const scrollHeight = this.props.virtualizedScrollHeight;
     const trackHeight = getInnerHeight(this.trackVertical);
@@ -293,14 +323,21 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     return (offset / (trackWidth - thumbWidth)) * (scrollWidth - clientWidth);
   }
 
+  /**Gets the mapped scrollTop for and offset relative to the scroll bar*/
   getScrollTopForOffset(offset: number) {
-    const { clientHeight } = this.viewPort;
-    const scrollHeight = this.virtualizedHeight;
-    // const scrollHeight = this.props.virtualizedScrollHeight;
+    const { clientHeight } = this.getViewPortElementValues(); // this.viewPort;
+    const virtualizedHeight = this.virtualizedHeight;
     const trackHeight = getInnerHeight(this.trackVertical);
     const thumbHeight = this.getThumbVerticalHeight();
+
     const scrollTopOffsetResult =
-      (offset / (trackHeight - thumbHeight)) * (scrollHeight - clientHeight);
+      (offset / (trackHeight - thumbHeight)) *
+      (virtualizedHeight - clientHeight);
+
+    // const scrollEndOffsetResult = scrollTopOffsetResult + clientHeight;
+    // if (scrollEndOffsetResult > virtualizedHeight) {
+    //   return virtualizedHeight - clientHeight;
+    // }
     return scrollTopOffsetResult;
   }
 
@@ -367,36 +404,78 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
   addListeners() {
     /* istanbul ignore if */
     if (typeof document === "undefined" || !this.viewPort) return;
-    const { viewPort: view, trackHorizontal, trackVertical, thumbHorizontal, thumbVertical } = this;
+    const {
+      viewPort: view,
+      trackHorizontal,
+      trackVertical,
+      thumbHorizontal,
+      thumbVertical,
+    } = this;
     view.addEventListener("mousewheel", this.handleWheel);
     // view.addEventListener("scroll", this.handleScroll);
     // if (!getScrollbarWidth()) return; TODO: Not sure what this is doing but solved dragging issue on osx, comment for now...
     trackHorizontal.addEventListener("mouseenter", this.handleTrackMouseEnter);
     trackHorizontal.addEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackHorizontal.addEventListener("mousedown", this.handleHorizontalTrackMouseDown);
+    trackHorizontal.addEventListener(
+      "mousedown",
+      this.handleHorizontalTrackMouseDown
+    );
     trackVertical.addEventListener("mouseenter", this.handleTrackMouseEnter);
     trackVertical.addEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackVertical.addEventListener("mousedown", this.handleVerticalTrackMouseDown);
-    thumbHorizontal.addEventListener("mousedown", this.handleHorizontalThumbMouseDown);
-    thumbVertical.addEventListener("mousedown", this.handleVerticalThumbMouseDown);
+    trackVertical.addEventListener(
+      "mousedown",
+      this.handleVerticalTrackMouseDown
+    );
+    thumbHorizontal.addEventListener(
+      "mousedown",
+      this.handleHorizontalThumbMouseDown
+    );
+    thumbVertical.addEventListener(
+      "mousedown",
+      this.handleVerticalThumbMouseDown
+    );
     window.addEventListener("resize", this.handleWindowResize);
   }
 
   removeListeners() {
     /* istanbul ignore if */
     if (typeof document === "undefined" || !this.viewPort) return;
-    const { viewPort: view, trackHorizontal, trackVertical, thumbHorizontal, thumbVertical } = this;
+    const {
+      viewPort: view,
+      trackHorizontal,
+      trackVertical,
+      thumbHorizontal,
+      thumbVertical,
+    } = this;
     view.removeEventListener("mousewheel", this.handleWheel);
     // view.removeEventListener("scroll", this.handleScroll);
     // if (!getScrollbarWidth()) return; TODO: Not sure what this is doing but solved dragging issue on osx, comment for now...
-    trackHorizontal.removeEventListener("mouseenter", this.handleTrackMouseEnter);
-    trackHorizontal.removeEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackHorizontal.removeEventListener("mousedown", this.handleHorizontalTrackMouseDown);
+    trackHorizontal.removeEventListener(
+      "mouseenter",
+      this.handleTrackMouseEnter
+    );
+    trackHorizontal.removeEventListener(
+      "mouseleave",
+      this.handleTrackMouseLeave
+    );
+    trackHorizontal.removeEventListener(
+      "mousedown",
+      this.handleHorizontalTrackMouseDown
+    );
     trackVertical.removeEventListener("mouseenter", this.handleTrackMouseEnter);
     trackVertical.removeEventListener("mouseleave", this.handleTrackMouseLeave);
-    trackVertical.removeEventListener("mousedown", this.handleVerticalTrackMouseDown);
-    thumbHorizontal.removeEventListener("mousedown", this.handleHorizontalThumbMouseDown);
-    thumbVertical.removeEventListener("mousedown", this.handleVerticalThumbMouseDown);
+    trackVertical.removeEventListener(
+      "mousedown",
+      this.handleVerticalTrackMouseDown
+    );
+    thumbHorizontal.removeEventListener(
+      "mousedown",
+      this.handleHorizontalThumbMouseDown
+    );
+    thumbVertical.removeEventListener(
+      "mousedown",
+      this.handleVerticalThumbMouseDown
+    );
     window.removeEventListener("resize", this.handleWindowResize);
     // Possibly setup by `handleDragStart`
     this.teardownDragging();
@@ -614,11 +693,15 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     });
   }
 
-  update(scrollDelta: number = 0, callback: (values: ScrollUpdateArgs) => void = () => {}) {
+  update(
+    scrollDelta: number = 0,
+    callback: (values: ScrollUpdateArgs) => void = () => {}
+  ) {
     this.raf(() => this._update(scrollDelta, callback));
   }
 
-  clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
+  clamp = (num: number, min: number, max: number) =>
+    Math.min(Math.max(num, min), max);
 
   syncScrollStatus(customScrollTop: number, nativeScrolltop: number) {
     let nativeAtBottom = this.scrollIsAtBottom(
@@ -639,7 +722,11 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     // console.log(`native: ${nativeAtBottom}, custom: ${customAtBottom}`);
   }
 
-  scrollIsAtBottom(scrollTop: number, clientHeight: number, scrollHeight: number) {
+  scrollIsAtBottom(
+    scrollTop: number,
+    clientHeight: number,
+    scrollHeight: number
+  ) {
     return scrollTop + clientHeight == scrollHeight;
   }
 
@@ -648,14 +735,22 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
   _update(scrollDelta: number, callback: (values: ScrollUpdateArgs) => void) {
     const { onUpdate, hideTracksWhenNotNeeded } = this.props;
 
-    const { scrollLeft, clientWidth, scrollWidth, clientHeight, scrollHeight, scrollTop, top } =
-      this.getViewPortElementValues();
+    const {
+      scrollLeft,
+      clientWidth,
+      scrollWidth,
+      clientHeight,
+      scrollHeight,
+      scrollTop,
+      top,
+    } = this.getViewPortElementValues();
 
     // if (getScrollbarWidth() > 0) {
     const trackHorizontalWidth = getInnerWidth(this.trackHorizontal);
     const thumbHorizontalWidth = this.getThumbHorizontalWidth();
     const thumbHorizontalX =
-      (scrollLeft / (scrollWidth - clientWidth)) * (trackHorizontalWidth - thumbHorizontalWidth);
+      (scrollLeft / (scrollWidth - clientWidth)) *
+      (trackHorizontalWidth - thumbHorizontalWidth);
     const thumbHorizontalStyle = {
       width: thumbHorizontalWidth,
       transform: `translateX(${thumbHorizontalX}px)`,
@@ -675,7 +770,11 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     const thumbVerticalHeight = this.getThumbVerticalHeight();
 
     const scrollTopMax = virtualizedScrollHeight - thumbVerticalHeight;
-    const clampedScrollTopPos = this.clamp(Math.floor(this.fakeScrollTop), 0, scrollTopMax);
+    const clampedScrollTopPos = this.clamp(
+      Math.floor(this.fakeScrollTop),
+      0,
+      scrollTopMax
+    );
 
     console.log("custom scrolltop", clampedScrollTopPos);
     // const virtualizedScrollHeight = this.props.virtualizedScrollHeight;
@@ -684,9 +783,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     const thumbMaxPos = trackVerticalHeight - thumbVerticalHeight;
 
     let thumbVerticalPosRaw =
-      (clampedScrollTopPos / (virtualizedScrollHeight - clientHeight)) * thumbMaxPos;
+      (clampedScrollTopPos / (virtualizedScrollHeight - clientHeight)) *
+      thumbMaxPos;
 
-    const thumbVerticalY = this.clamp(thumbVerticalPosRaw, thumbMinPos, thumbMaxPos);
+    const thumbVerticalY = this.clamp(
+      thumbVerticalPosRaw,
+      thumbMinPos,
+      thumbMaxPos
+    );
 
     // console.log("ää vert pos clamp: ", thumbVerticalY);
 
@@ -705,17 +809,22 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
     // See handle drag.
     if (!this.dragging) {
       // add scroll delta
-      let deltaScrollY = this.viewPort.scrollTop - this.nativeScrollStatus.scrollTop;
+      let deltaScrollY =
+        this.viewPort.scrollTop - this.nativeScrollStatus.scrollTop;
 
       const dir = scrollDelta;
 
       // console.log("DELTA: " + deltaScrollY);
 
       if (scrollDelta) {
-        thumbVerticalPosRaw += this.props.scrollSpeed * dir;
+        thumbVerticalPosRaw += this.scrollSpeed * dir;
       }
     }
-    const finalThumbVerticalY = this.clamp(thumbVerticalPosRaw, thumbMinPos, thumbMaxPos);
+    const finalThumbVerticalY = this.clamp(
+      thumbVerticalPosRaw,
+      thumbMinPos,
+      thumbMaxPos
+    );
 
     const thumbVerticalStyle: CSSProperties = {
       height: thumbVerticalHeight,
@@ -758,7 +867,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
   updateScrollBarStyle(updatedScrollStatus: ScrollInfo) {}
 
   render() {
-    const scrollbarWidth = getScrollbarWidth();
+    // const scrollbarWidth = getScrollbarWidth();
     /* eslint-disable no-unused-vars */
     const {
       onScroll,
@@ -787,6 +896,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
       height,
       width,
       ref,
+      scrollbarWidth,
       ...props
     } = this.props;
     /* eslint-enable no-unused-vars */
@@ -867,7 +977,7 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
         top: 0,
         left: 0,
         bottom: 0,
-        right: 15, //-17,
+        right: scrollbarWidth, //-17,
         // overflow: "scroll",
         overflow: "clip",
         // WebkitOverflowScrolling: "touch",
@@ -903,11 +1013,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
               this.trackHorizontal = ref;
             },
           },
-          cloneElement(renderThumbHorizontal({ style: thumbHorizontalStyleDefault }), {
-            ref: (ref: HTMLElement) => {
-              this.thumbHorizontal = ref;
-            },
-          })
+          cloneElement(
+            renderThumbHorizontal({ style: thumbHorizontalStyleDefault }),
+            {
+              ref: (ref: HTMLElement) => {
+                this.thumbHorizontal = ref;
+              },
+            }
+          )
         ),
         cloneElement(
           renderTrackVertical({ style: trackVerticalStyle }),
@@ -917,11 +1030,14 @@ export default class Scrollbar extends Component<ScrollbarProps, State> implemen
               this.trackVertical = ref;
             },
           },
-          cloneElement(renderThumbVertical({ style: thumbVerticalStyleDefault }), {
-            ref: (ref: HTMLElement) => {
-              this.thumbVertical = ref;
-            },
-          })
+          cloneElement(
+            renderThumbVertical({ style: thumbVerticalStyleDefault }),
+            {
+              ref: (ref: HTMLElement) => {
+                this.thumbVertical = ref;
+              },
+            }
+          )
         ),
       ]
     );
@@ -947,5 +1063,6 @@ Scrollbar.defaultProps = {
   universal: false,
 };
 
-export type ScrollbarProps = typeof Scrollbar.defaultProps & PropTypes.InferProps<typeof propTypes>;
+export type ScrollbarProps = typeof Scrollbar.defaultProps &
+  PropTypes.InferProps<typeof propTypes>;
 const rowHeights: Map<number, number> = new Map();

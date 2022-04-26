@@ -49,11 +49,9 @@ const DynamicList = (
 
     const MeasurementContainer = defaultMeasurementContainer({
       style: {
-        width:
-          width -
-          13 /*TODO: check out why 13 works... this solves issue with wrong measurements...*/,
+        width,
         height,
-        overflowY: "scroll",
+        // overflowY: "scroll",
       },
       children: ItemContainer,
     });
@@ -133,7 +131,7 @@ const DynamicList = (
       let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
       return lastItemOffsetEnd;
     }
-    return itemCount * 100;
+    return itemCount * hCache.DefaultItemHeight;
   };
 
   return (
@@ -143,6 +141,7 @@ const DynamicList = (
       onItemsRendered={(props) => {
         if (itemCount > 0) {
           let totalHeight = getTotalHeight(itemCount);
+          // console.log("new total height on rendered", totalHeight);
           onVirtualizedHeightChanged(totalHeight);
         }
         onItemsRendered(props);

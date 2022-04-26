@@ -1,31 +1,32 @@
 import { OffsetStorage } from "./OffsetStorage";
 
-const itemDefaultHeight = 100;
-
 export type MeasuredItem = { index: number; height: number };
 
 export class DynamicOffsetCache {
+  private readonly _itemDefaultHeight: number;
   m_OffsetStorage: OffsetStorage;
   m_LastMeasuredIndex: number;
   m_lastMeasuredOffsetEnd: number;
 
-  constructor() {
+  constructor(itemDefaultHeight: number) {
     this.m_LastMeasuredIndex = -1;
     this.m_lastMeasuredOffsetEnd = 0;
+    this._itemDefaultHeight = itemDefaultHeight;
     this.m_OffsetStorage = new OffsetStorage(itemDefaultHeight);
   }
 
   public Clear() {
     this.m_LastMeasuredIndex = -1;
     this.m_lastMeasuredOffsetEnd = 0;
-    this.m_OffsetStorage = new OffsetStorage(itemDefaultHeight);
+    this.m_OffsetStorage = new OffsetStorage(this._itemDefaultHeight);
   }
 
   public UpdateOffsets(measuredItems: MeasuredItem[]) {
     if (measuredItems.length == 0) return;
 
     const measuredRangeStartIndex = measuredItems[0].index;
-    const measuredRangeStopIndex = measuredItems[measuredItems.length - 1].index;
+    const measuredRangeStopIndex =
+      measuredItems[measuredItems.length - 1].index;
 
     console.warn(
       `Last measured index: [${this.m_LastMeasuredIndex}]. Updating offsets for items`,
@@ -35,9 +36,13 @@ export class DynamicOffsetCache {
     // TODO: It might be possible to get this value earlier, e.g. when calculating stop index
     //       from start index in variable size list class.
     const previousItemIndex = measuredRangeStartIndex - 1;
-    let firstItemOffsetTop = this.m_OffsetStorage.getOffsetEnd(previousItemIndex);
+    let firstItemOffsetTop =
+      this.m_OffsetStorage.getOffsetEnd(previousItemIndex);
 
-    let newCalculatedOffsetEnds = this._getCalculatedOffsetEnds(measuredItems, firstItemOffsetTop);
+    let newCalculatedOffsetEnds = this._getCalculatedOffsetEnds(
+      measuredItems,
+      firstItemOffsetTop
+    );
 
     this.m_OffsetStorage.addOffsetEnds(newCalculatedOffsetEnds);
 
@@ -59,7 +64,10 @@ export class DynamicOffsetCache {
     return itemOffset;
   }
 
-  private _getCalculatedOffsetEnds(measuredItems: MeasuredItem[], previousItemOffsetEnd: number) {
+  private _getCalculatedOffsetEnds(
+    measuredItems: MeasuredItem[],
+    previousItemOffsetEnd: number
+  ) {
     let currentItemStartPos = previousItemOffsetEnd;
 
     let newOffsets = measuredItems.map((item) => {

@@ -7,8 +7,6 @@ export type ItemSizeData = {
   offset: number;
 };
 
-const defaultItemHeight = 100;
-
 /**
  * Cache object to allow dynamic storage & calculation of offsets to avoid having to
  * recalulate all items offsets in case an item with a lower index than what has been
@@ -16,9 +14,18 @@ const defaultItemHeight = 100;
  */
 export default class HeightCache {
   private _heightCache: Record<number, number>;
+  private readonly _defaultItemHeight;
 
-  constructor(initialValues: Record<number, number>) {
+  constructor(
+    initialValues: Record<number, number>,
+    defaultItemHeight: number
+  ) {
     this._heightCache = { ...initialValues };
+    this._defaultItemHeight = defaultItemHeight;
+  }
+
+  public get DefaultItemHeight(): number {
+    return this._defaultItemHeight;
   }
 
   public addHeight(itemData: { index: number; height: number }) {
@@ -37,17 +44,6 @@ export default class HeightCache {
     return height;
   }
 
-  // public getNumberOfCachedItems() {
-  //   let lastMeasuredIndex = this.highestRequestedIndex;
-  //   return lastMeasuredIndex + 1;
-  // }
-
-  // public getTotalCachedItemHeight() {
-  //   let lastMeasuredIndex = this.highestRequestedIndex;
-  //   let lastCachedOffset = this._getOffsetForIndex(lastMeasuredIndex);
-  //   return lastCachedOffset;
-  // }
-
   clearCache() {
     this._heightCache = {};
   }
@@ -63,6 +59,6 @@ export default class HeightCache {
       return cachedHeight;
     }
 
-    return defaultItemHeight;
+    return this._defaultItemHeight;
   }
 }

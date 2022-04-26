@@ -25,10 +25,9 @@ export const propTypes = {
   style: PropTypes.object,
   children: PropTypes.node,
   virtualizedScrollHeight: PropTypes.number,
-  scrollSpeed: PropTypes.number,
-  scrollToOffset: PropTypes.number,
   height: PropTypes.number,
   width: PropTypes.number,
+  scrollbarWidth: PropTypes.number,
   ref: PropTypes.oneOfType([
     // Either a function
     PropTypes.func,

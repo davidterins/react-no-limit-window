@@ -11,45 +11,6 @@ const getRandomInt = (max) => {
   return Math.floor(Math.random() * max);
 };
 const Row = ({ index, style }: any, itemHeight: number) => {
-  // const rowRef = useRef<any>();
-
-  // useEffect(() => {
-  //   if (rowRef.current) {
-  //     // if (!rowHeights.has(index)) {
-  //     console.log(`Setting Row height ${index}: `, rowRef.current.clientHeight);
-
-  //     let renderedHeight = rowRef.current.clientHeight;
-
-  //     setRowHeight(index, renderedHeight);
-  //     // }
-  //   }
-  // }, [rowRef]);
-
-  // let rend = () => {
-  //   // let randomHeight = getRandomInt(350);
-  //   return (
-  //     <div style={{ ...style }}>
-  //       Row: {index} {loremIpsum({ count: 10 })}
-  //     </div>
-  //   );
-  //   const rowHeight = 20;
-  //   const numberOfSections = itemHeight / rowHeight;
-  //   let divs = [];
-
-  //   for (let i = 1; i <= numberOfSections; i++) {
-  //     divs.push(i);
-  //   }
-
-  //   return divs.map((sectionNumber) => {
-  //     return (
-  //       <div style={{ height: rowHeight }}>
-  //         Row: {index} Section: {sectionNumber}
-  //       </div>
-  //     );
-  //   });
-  // };
-
-  // let cachedRowHeight = getRowHeight(index);
   let words = getWords(index);
   // let words = null;
 
@@ -58,7 +19,7 @@ const Row = ({ index, style }: any, itemHeight: number) => {
       style={{
         ...style,
         // height: 148,
-        border: "solid red 1px",
+        // border: "solid red 10px",
       }}
     >
       Row: {index} {words}

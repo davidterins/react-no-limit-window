@@ -1,5 +1,3 @@
-import { thumbVerticalStyleDefault } from "../scrollbar/Scrollbars/styles";
-
 type Offset = number;
 
 interface OffsetGroup {
@@ -62,7 +60,10 @@ export class OffsetStorage {
 
     switch (groupAction.actionType) {
       case "AppendToExistingGroup": {
-        this._handleAppendToExistingGroup(groupAction as AppendToExistingGroupAction, offsets);
+        this._handleAppendToExistingGroup(
+          groupAction as AppendToExistingGroupAction,
+          offsets
+        );
         break;
       }
       case "PrependToExistingGroup": {
@@ -74,7 +75,10 @@ export class OffsetStorage {
         break;
       }
       case "MergeTwoExistingGroups": {
-        this._handleMergeTwoExistingGroups(groupAction as MergeTwoExistingGroupsAction, offsets);
+        this._handleMergeTwoExistingGroups(
+          groupAction as MergeTwoExistingGroupsAction,
+          offsets
+        );
         break;
       }
       case "NewDisconnectedGroup": {
@@ -87,10 +91,16 @@ export class OffsetStorage {
       default:
         throw "Unknown group action!";
     }
-    console.log(`[${groupAction.actionType}] - Cached offsets:`, this.m_OffsetGroups);
+    console.debug(
+      `[${groupAction.actionType}] - Cached offsets:`,
+      this.m_OffsetGroups
+    );
   }
 
-  private _handleAppendToExistingGroup(action: AppendToExistingGroupAction, offsets: number[]) {
+  private _handleAppendToExistingGroup(
+    action: AppendToExistingGroupAction,
+    offsets: number[]
+  ) {
     const { appendedGroupIndex } = action;
     const appendingGroup = this.m_OffsetGroups[appendedGroupIndex];
     const isLastGroup = appendedGroupIndex == this.m_OffsetGroups.length - 1;
@@ -116,8 +126,12 @@ export class OffsetStorage {
     // TODO - [Done]: This will invalidate all offsets after the new ones,
     //       so update offsets of some maybe 50 of the following items and cut the group?
     let newItemsDefaultHeightSum = offsets.length * this.m_itemDefaultHeight;
-    let newItemsMeasuredHeightSum = heights.reduce((partialSum, a) => partialSum + a, 0);
-    let deltaHeightChange = newItemsMeasuredHeightSum - newItemsDefaultHeightSum;
+    let newItemsMeasuredHeightSum = heights.reduce(
+      (partialSum, a) => partialSum + a,
+      0
+    );
+    let deltaHeightChange =
+      newItemsMeasuredHeightSum - newItemsDefaultHeightSum;
 
     if (prependingGroup.offsets.length > 50) {
       prependingGroup.offsets.length = 50;
@@ -129,7 +143,8 @@ export class OffsetStorage {
 
     prependingGroup.offsets.unshift(...offsets);
     prependingGroup.startIndex = prependingGroup.startIndex - offsets.length;
-    prependingGroup.stopIndex = prependingGroup.startIndex + prependingGroup.offsets.length - 1;
+    prependingGroup.stopIndex =
+      prependingGroup.startIndex + prependingGroup.offsets.length - 1;
 
     if (!isLastGroup) {
       // Delete rest of the groups as their offset are invalidated.
@@ -137,7 +152,10 @@ export class OffsetStorage {
     }
   }
 
-  private _handleNewDisconnectedGroup(action: NewDisconnectedGroupAction, offsets: IndexOffset[]) {
+  private _handleNewDisconnectedGroup(
+    action: NewDisconnectedGroupAction,
+    offsets: IndexOffset[]
+  ) {
     const { afterGroupIndex } = action;
     const willBeLastGroup = afterGroupIndex == this.m_OffsetGroups.length - 1;
     let newDisconnectedGroup: OffsetGroup = {
@@ -167,7 +185,10 @@ export class OffsetStorage {
     this.m_OffsetGroups.sort(groupSort);
   }
 
-  private _handleMergeTwoExistingGroups(action: MergeTwoExistingGroupsAction, offsets: number[]) {
+  private _handleMergeTwoExistingGroups(
+    action: MergeTwoExistingGroupsAction,
+    offsets: number[]
+  ) {
     const { first, second } = action.mergingGroupIndices;
     const firstGroup = this.m_OffsetGroups[first];
     const secondGroup = this.m_OffsetGroups[second];
@@ -175,7 +196,10 @@ export class OffsetStorage {
     firstGroup.offsets.push(...offsets);
     firstGroup.stopIndex += offsets.length;
 
-    const additionalOffset = offsets.reduce((partialSum, a) => partialSum + a, 0);
+    const additionalOffset = offsets.reduce(
+      (partialSum, a) => partialSum + a,
+      0
+    );
 
     // TODO: maybe cut the second group if it is too long for performance reasons.
     secondGroup.offsets.forEach((offset) => {
@@ -188,7 +212,9 @@ export class OffsetStorage {
     this.m_OffsetGroups.length = first + 1;
   }
 
-  private _detmermineGroupAction(newIndexOffsetRange: IndexOffset[]): GroupActionBase {
+  private _detmermineGroupAction(
+    newIndexOffsetRange: IndexOffset[]
+  ): GroupActionBase {
     const lastOffsetIndex = newIndexOffsetRange.length - 1;
     const firstItem = newIndexOffsetRange[0];
     const lastItem = newIndexOffsetRange[lastOffsetIndex];
@@ -205,13 +231,15 @@ export class OffsetStorage {
       return newDisconnectedGroupAction;
     }
 
-    const containingOrPreviousGroupToStartIndex = this._findContainingOrPreviousGroupToItemIndex1(
-      lastOffsetGroupIndex,
-      0,
-      firstItem.index
-    );
+    const containingOrPreviousGroupToStartIndex =
+      this._findContainingOrPreviousGroupToItemIndex1(
+        lastOffsetGroupIndex,
+        0,
+        firstItem.index
+      );
 
-    const { groupIndex: prevGroupIndex, contained } = containingOrPreviousGroupToStartIndex;
+    const { groupIndex: prevGroupIndex, contained } =
+      containingOrPreviousGroupToStartIndex;
 
     if (contained) {
       throw `A Group should not be be able to be contained,
@@ -219,8 +247,11 @@ export class OffsetStorage {
     }
 
     const previousGroup = this.m_OffsetGroups[prevGroupIndex];
-    const previousGroupIsLast = prevGroupIndex == this.m_OffsetGroups.length - 1;
-    const nextGroup = previousGroupIsLast ? null : this.m_OffsetGroups[prevGroupIndex + 1];
+    const previousGroupIsLast =
+      prevGroupIndex == this.m_OffsetGroups.length - 1;
+    const nextGroup = previousGroupIsLast
+      ? null
+      : this.m_OffsetGroups[prevGroupIndex + 1];
 
     if (
       firstItem.index == previousGroup?.stopIndex + 1 &&
@@ -278,7 +309,8 @@ export class OffsetStorage {
     }
 
     const lastOffsetGroup = this.m_OffsetGroups[lastGroupIndex];
-    const lastMeasuredOffset = lastOffsetGroup.offsets[lastOffsetGroup.offsets.length - 1];
+    const lastMeasuredOffset =
+      lastOffsetGroup.offsets[lastOffsetGroup.offsets.length - 1];
 
     if (index > lastOffsetGroup.stopIndex) {
       let unmeasuredItemsCount = index - lastOffsetGroup.stopIndex;
@@ -287,11 +319,12 @@ export class OffsetStorage {
       return partiallyMeasuredOffset;
     }
 
-    const { groupIndex, contained } = this._findContainingOrPreviousGroupToItemIndex2(
-      this.m_OffsetGroups.length - 1,
-      0,
-      index
-    );
+    const { groupIndex, contained } =
+      this._findContainingOrPreviousGroupToItemIndex2(
+        this.m_OffsetGroups.length - 1,
+        0,
+        index
+      );
 
     if (contained) {
       const containingGroup = this.m_OffsetGroups[groupIndex];
@@ -305,10 +338,13 @@ export class OffsetStorage {
         ? previousGroup.offsets[previousGroup.offsets.length - 1]
         : 0;
 
-      const previousGroupStopIndex = previousGroup ? previousGroup.stopIndex : -1;
+      const previousGroupStopIndex = previousGroup
+        ? previousGroup.stopIndex
+        : -1;
       const unmeasuredItemsCount = index - previousGroupStopIndex;
       const unmeasuredOffset = unmeasuredItemsCount * this.m_itemDefaultHeight;
-      const partiallyMeasuredOffset = previousGroupsLastMeasuredOffset + unmeasuredOffset;
+      const partiallyMeasuredOffset =
+        previousGroupsLastMeasuredOffset + unmeasuredOffset;
 
       return partiallyMeasuredOffset;
     }
@@ -388,12 +424,17 @@ export class OffsetStorage {
     return { groupIndex: middle - 1, contained: false };
   }
 
-  private _getUnmeasuredDeltaItemCount(targetIndex: number, lastMeasuredIndex: number): number {
-    let deltaUnmeasuredItemCount = lastMeasuredIndex == -1 ? 0 : targetIndex - lastMeasuredIndex;
+  private _getUnmeasuredDeltaItemCount(
+    targetIndex: number,
+    lastMeasuredIndex: number
+  ): number {
+    let deltaUnmeasuredItemCount =
+      lastMeasuredIndex == -1 ? 0 : targetIndex - lastMeasuredIndex;
     let result = clamp(deltaUnmeasuredItemCount, 0, lastMeasuredIndex);
 
     return result;
   }
 }
 
-const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
+const clamp = (num: number, min: number, max: number) =>
+  Math.min(Math.max(num, min), max);

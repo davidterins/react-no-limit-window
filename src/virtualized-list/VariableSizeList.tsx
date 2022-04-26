@@ -5,7 +5,7 @@ import {
   ItemInfoForOffset,
   StopItemInfoForOffset,
 } from "./listComponent.types";
-const DEFAULT_ESTIMATED_ITEM_SIZE = 100;
+// const DEFAULT_ESTIMATED_ITEM_SIZE = 100;
 export type VariableSizeProps = Props<any> & {
   estimatedItemSize: number;
   getItemHeight: (index: number) => number;
@@ -52,7 +52,11 @@ const _findNearestItemBinarySearch = (
   low: number,
   targetOffset: number
 ): ItemInfoForOffset => {
-  const rowContainsOffset = (rowStart: number, rowStop: number, offset: number) => {
+  const rowContainsOffset = (
+    rowStart: number,
+    rowStop: number,
+    offset: number
+  ) => {
     if (offset >= rowStart && offset <= rowStop) {
       return true;
     }
@@ -65,7 +69,13 @@ const _findNearestItemBinarySearch = (
     const currentItemOffsetEnd = currentItemOffsetStart + currentItemHeight;
 
     // if (currentItemOffsetStart === offset) {
-    if (rowContainsOffset(currentItemOffsetStart, currentItemOffsetEnd, targetOffset)) {
+    if (
+      rowContainsOffset(
+        currentItemOffsetStart,
+        currentItemOffsetEnd,
+        targetOffset
+      )
+    ) {
       // This will be the first start/first item in the rendered view.
       // Make sure that it is properly measured and cache is updated accordingly.
       props.onJITMeasurement(props, middle, middle);
@@ -100,7 +110,8 @@ const _getStopIndexForStartIndex = (
   scrollOffset: number,
   instanceProps: InstanceProps
 ): StopItemInfoForOffset => {
-  const { direction, height, itemCount, layout, width, getItemHeight } = props as VariableSizeProps;
+  const { direction, height, itemCount, layout, width, getItemHeight } =
+    props as VariableSizeProps;
   // TODO Deprecate direction "horizontal"
   const isHorizontal = direction === "horizontal" || layout === "horizontal";
   const size = (isHorizontal ? width : height) as any as number;
@@ -145,7 +156,11 @@ const VariableSizeList = createListComponent({
   onloadedItemsRendered: (props, startIndex, stopIndex) => {
     props.onForceUpdateLoadedItems(props, startIndex, stopIndex);
   },
-  getItemOffset: (props: Props<any>, index: number, instanceProps: InstanceProps): number => {
+  getItemOffset: (
+    props: Props<any>,
+    index: number,
+    instanceProps: InstanceProps
+  ): number => {
     const { getItemOffset } = props as VariableSizeProps;
     return getItemOffset(index);
   },
@@ -177,11 +192,17 @@ const VariableSizeList = createListComponent({
     // Get estimated total size after ItemMetadata is computed,
     // To ensure it reflects actual measurements instead of just estimates.
     const estimatedTotalSize = getEstimatedTotalSize(props, instanceProps);
-    const maxOffset = Math.max(0, Math.min(estimatedTotalSize - size, targetItemOffset));
+    const maxOffset = Math.max(
+      0,
+      Math.min(estimatedTotalSize - size, targetItemOffset)
+    );
     const minOffset = Math.max(0, targetItemOffset - size + targetItemHeight);
 
     if (align === "smart") {
-      if (scrollOffset >= minOffset - size && scrollOffset <= maxOffset + size) {
+      if (
+        scrollOffset >= minOffset - size &&
+        scrollOffset <= maxOffset + size
+      ) {
         align = "auto";
       } else {
         align = "center";
@@ -220,18 +241,29 @@ const VariableSizeList = createListComponent({
     scrollOffset: number,
     instanceProps: InstanceProps
   ): StopItemInfoForOffset =>
-    _getStopIndexForStartIndex(props, startItemInfo, scrollOffset, instanceProps),
+    _getStopIndexForStartIndex(
+      props,
+      startItemInfo,
+      scrollOffset,
+      instanceProps
+    ),
   initInstanceProps(props: Props<any>, instance: any): InstanceProps {
     const { estimatedItemSize } = props as any as VariableSizeProps;
     const instanceProps = {
       itemMetadataMap: {},
-      estimatedItemSize: estimatedItemSize || DEFAULT_ESTIMATED_ITEM_SIZE,
+      estimatedItemSize: estimatedItemSize,
       lastMeasuredIndex: -1,
     };
 
-    instance.resetAfterIndex = (index: number, shouldForceUpdate: boolean = true) => {
+    instance.resetAfterIndex = (
+      index: number,
+      shouldForceUpdate: boolean = true
+    ) => {
       console.log("RESET AFTER INDEX");
-      instanceProps.lastMeasuredIndex = Math.min(instanceProps.lastMeasuredIndex, index - 1);
+      instanceProps.lastMeasuredIndex = Math.min(
+        instanceProps.lastMeasuredIndex,
+        index - 1
+      );
 
       // We could potentially optimize further by only evicting styles after this index,
       // But since styles are only cached while scrolling is in progress-

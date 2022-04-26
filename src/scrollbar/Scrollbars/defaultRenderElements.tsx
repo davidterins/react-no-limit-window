@@ -44,8 +44,8 @@ export function renderThumbVerticalDefault({ style, ...props }: any) {
     ...style,
     cursor: "pointer",
     borderRadius: "inherit",
-    border: "1px solid red",
-    backgroundColor: "pink",
+    // border: "1px solid red",
+    backgroundColor: "#FFFFFF50",
   };
   return <div style={finalStyle} {...props} />;
 }

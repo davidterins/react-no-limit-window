@@ -1,9 +1,4 @@
-import React, {
-  CSSProperties,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { CSSProperties, useEffect, useRef, useState } from "react";
 import Scrollbar from "../scrollbar";
 import { IListView } from "../virtualized-list/createListComponent";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -17,22 +12,23 @@ import debounce from "lodash.debounce";
 import HeightCache from "../react-window-dynamic-list/cache";
 import { DynamicOffsetCache } from "../react-window-dynamic-list/DynamicOffsetCache";
 
-const lineHeight = 20;
-
-export const createHeightCache = (knownSizes = {}) =>
-  new HeightCache(knownSizes);
-const createOffsetCache = () => new DynamicOffsetCache();
+export const createHeightCache = (defaultItemHeight: number, knownSizes = {}) =>
+  new HeightCache(knownSizes, defaultItemHeight);
+const createOffsetCache = (defaultItemHeight: number) =>
+  new DynamicOffsetCache(defaultItemHeight);
 
 interface NoLimitListProps {
   style: CSSProperties;
   itemCount: number;
   heightCache: HeightCache;
-  defaultItemHeight: number;
   scrollToIndex?: number;
   isItemLoaded?: (index: number) => boolean;
   onItemsRendered?: onItemsRenderedCallback;
   ref?: (ref: any) => void;
   setRef?: (ref: any) => void;
+  renderThumbVertical?: ({ style, ...props }: any) => JSX.Element;
+  renderTrackVertical?: ({ style, ...props }: any) => JSX.Element;
+  scrollbarWidth: number,
   children: RenderComponent<any>;
 }
 
@@ -41,16 +37,19 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     style,
     itemCount,
     heightCache,
-    defaultItemHeight,
     scrollToIndex,
+    scrollbarWidth,
+    renderThumbVertical,
+    renderTrackVertical,
     children,
   } = props;
   let currentWidth = -1;
   let currentHeight = -1;
-  // const heightCache = createHeightCache();
-  // const offsetCache = createOffsetCache();
-  const offsetCache = useRef(createOffsetCache()).current;
-  // const offsetCache = offsetCacheRef.current;
+
+  const offsetCache = useRef(
+    createOffsetCache(heightCache.DefaultItemHeight)
+  ).current;
+
   const initialScrollOffset = getOffsetForIndex(
     scrollToIndex,
     heightCache,
@@ -83,13 +82,10 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
       let lastItemOffsetEnd = lastItemOffset + lastItemHeight;
       return lastItemOffsetEnd;
     }
-    return itemCount * defaultItemHeight;
+    return itemCount * heightCache.DefaultItemHeight;
   };
 
   let virtualizedHeight = getTotalHeight(itemCount);
-  // const [virtualizedHeight, setVirtualizedHeight] = useState<number>(
-  //   getTotalHeight(itemCount)
-  // );
 
   const listRef = useRef();
   const virtualizingContainerRef = useRef();
@@ -151,19 +147,20 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   ) => {
     const k = debounce(() => {
       let scrollbarElement = ScrollBarRef.current as IScrollBar;
-      if (cacheReset) {
-        heightCache.clearCache();
-        offsetCache.Clear();
-      }
+      // if (cacheReset) {
+      heightCache.clearCache();
+      offsetCache.Clear();
+      scrollbarElement?.setScrollHeight(getTotalHeight(itemCount));
+      // }
 
       if (lastRenderedIndices.length > 0) {
-        const firstRenderedIndex = lastRenderedIndices[0];
-        const targetOffset = getOffsetForIndex(
-          firstRenderedIndex,
-          heightCache,
-          offsetCache
-        );
-        scrollbarElement?.setScrollPos(targetOffset);
+        // const firstRenderedIndex = lastRenderedIndices[0];
+        // const targetOffset = getOffsetForIndex(
+        //   firstRenderedIndex,
+        //   heightCache,
+        //   offsetCache
+        // );
+        // scrollbarElement?.setScrollPos(targetOffset);
       }
     }, 50);
     k();
@@ -172,9 +169,6 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
   return (
     <AutoSizer style={style}>
       {({ height, width }) => {
-        // return <div style={{ height, width, background: "blue" }}></div>;
-        const scrollSpeed = (height / virtualizedHeight) * lineHeight;
-
         if (currentWidth == -1) {
           currentWidth = width;
         }
@@ -188,15 +182,22 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
         if (currentHeight != height) {
           handleListResize(false, lastRenderedIndices);
         }
+
+        // Allways update scrollheight of scrollbar to latest height.
+        let scrollbarElement = ScrollBarRef.current as IScrollBar;
+        scrollbarElement?.setScrollHeight(virtualizedHeight);
+
         return (
           <Scrollbar
             onScroll={handleScroll}
             scrollToOffset={initialScrollOffset}
-            scrollSpeed={scrollSpeed}
             virtualizedScrollHeight={virtualizedHeight}
             height={height}
             width={width}
             ref={ScrollBarRef}
+            scrollbarWidth={scrollbarWidth}
+            renderThumbVertical={renderThumbVertical}
+            renderTrackVertical={renderTrackVertical}
           >
             <DynamicList
               heightCache={heightCache}
@@ -204,9 +205,10 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
               ref={listRef}
               innerRef={virtualizingContainerRef}
               height={height}
-              width={width}
+              width={width - scrollbarWidth}
               onVirtualizedHeightChanged={(height: number) => {
                 // TODO : Maybe set scroll speed here as well.
+                console.error("New virtualized height", height);
                 let scrollbarElement = ScrollBarRef.current as IScrollBar;
                 scrollbarElement?.setScrollHeight(height);
                 // setVirtualizedHeight(height);
