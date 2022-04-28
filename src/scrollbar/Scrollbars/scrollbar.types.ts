@@ -28,6 +28,8 @@ export const propTypes = {
   height: PropTypes.number,
   width: PropTypes.number,
   scrollbarWidth: PropTypes.number,
+  stickToBottom: PropTypes.bool,
+  onAtBottomChanged: PropTypes.func,
   ref: PropTypes.oneOfType([
     // Either a function
     PropTypes.func,

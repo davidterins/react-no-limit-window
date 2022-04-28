@@ -162,7 +162,6 @@ export default class Scrollbar
       this.handleHorizontalThumbMouseDown.bind(this);
     this.handleVerticalThumbMouseDown =
       this.handleVerticalThumbMouseDown.bind(this);
-    this.handleWindowResize = this.handleWindowResize.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleDrag = this.handleDrag.bind(this);
     this.handleDragEnd = this.handleDragEnd.bind(this);
@@ -206,13 +205,14 @@ export default class Scrollbar
 
   setScrollHeight(newVirtualizedHeight: number) {
     console.log("SET VERT HEIGHT!", newVirtualizedHeight);
+    const rowHeight = 20;
     this.virtualizedHeight = newVirtualizedHeight;
-    this.scrollSpeed = (this.props.height / this.virtualizedHeight) * 20;
+    this.scrollSpeed = (this.props.height / this.virtualizedHeight) * rowHeight;
 
     const clientHeight = this.getViewPortElementValues().clientHeight;
     const currentScrollEnd = this.fakeScrollTop + clientHeight;
 
-    if (currentScrollEnd > newVirtualizedHeight) {
+    if (currentScrollEnd > newVirtualizedHeight || this.props.stickToBottom) {
       const scrollTopWithinBoundaries = newVirtualizedHeight - clientHeight;
       this.fakeScrollTop = scrollTopWithinBoundaries;
       this.props.onScroll(
@@ -345,6 +345,19 @@ export default class Scrollbar
     const wheelEvent = args as WheelEvent;
     let scrollDelta = wheelEvent?.deltaY / 100; // deltaY on chrome is either 100 or 200.
 
+    let newPosNotAtBottom = this.scrollIsAtBottom(
+      this.fakeScrollTop,
+      this.getViewPortElementValues().clientHeight,
+      this.virtualizedHeight
+    );
+    if (this.props.stickToBottom && !newPosNotAtBottom) {
+      this.props.onAtBottomChanged(false);
+    } else if (this.props.stickToBottom && scrollDelta < 0) {
+      this.props.onAtBottomChanged(false);
+    } else if (!this.props.stickToBottom && newPosNotAtBottom) {
+      this.props.onAtBottomChanged(true);
+    }
+
     this.update(scrollDelta, (updatedScrollArgs) => {
       const { nativeScrollStatus, customScrollStatus } = updatedScrollArgs;
 
@@ -434,7 +447,6 @@ export default class Scrollbar
       "mousedown",
       this.handleVerticalThumbMouseDown
     );
-    window.addEventListener("resize", this.handleWindowResize);
   }
 
   removeListeners() {
@@ -476,7 +488,6 @@ export default class Scrollbar
       "mousedown",
       this.handleVerticalThumbMouseDown
     );
-    window.removeEventListener("resize", this.handleWindowResize);
     // Possibly setup by `handleDragStart`
     this.teardownDragging();
   }
@@ -507,10 +518,6 @@ export default class Scrollbar
     const { autoHide } = this.props;
     if (!autoHide) return;
     this.hideTracks();
-  }
-
-  handleWindowResize() {
-    // this.update();
   }
 
   handleHorizontalTrackMouseDown(event) {
@@ -596,6 +603,7 @@ export default class Scrollbar
 
       // this.viewPort.scrollTop = this.getRandom(); // this.getScrollTopForOffset(offset);
       this.fakeScrollTop = this.getScrollTopForOffset(offset);
+
       this.handleWheel(null);
     }
     return false;

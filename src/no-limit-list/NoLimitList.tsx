@@ -22,13 +22,15 @@ interface NoLimitListProps {
   itemCount: number;
   heightCache: HeightCache;
   scrollToIndex?: number;
+  stickToBottom: boolean;
+  onAtBottomChanged: (atBottom: boolean) => void;
   isItemLoaded?: (index: number) => boolean;
   onItemsRendered?: onItemsRenderedCallback;
   ref?: (ref: any) => void;
   setRef?: (ref: any) => void;
   renderThumbVertical?: ({ style, ...props }: any) => JSX.Element;
   renderTrackVertical?: ({ style, ...props }: any) => JSX.Element;
-  scrollbarWidth: number,
+  scrollbarWidth: number;
   children: RenderComponent<any>;
 }
 
@@ -37,8 +39,10 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
     style,
     itemCount,
     heightCache,
+    stickToBottom,
     scrollToIndex,
     scrollbarWidth,
+    onAtBottomChanged,
     renderThumbVertical,
     renderTrackVertical,
     children,
@@ -196,6 +200,8 @@ const NoLimitList: React.FC<NoLimitListProps> = (props) => {
             width={width}
             ref={ScrollBarRef}
             scrollbarWidth={scrollbarWidth}
+            stickToBottom={stickToBottom}
+            onAtBottomChanged={onAtBottomChanged}
             renderThumbVertical={renderThumbVertical}
             renderTrackVertical={renderTrackVertical}
           >

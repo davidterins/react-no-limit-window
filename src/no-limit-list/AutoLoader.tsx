@@ -54,8 +54,23 @@ function renderTrackVertical({ style, ...props }: any) {
 
 const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ pageCollection }) => {
   const [itemCount, setItemCount] = useState<number>(initialItemCount);
+  const [stickToBottom, setStickToBottom] = useState<boolean>(true);
+  const [scrollToIndex, setScrollToIndex] = useState<number>(itemCount - 1);
+
   // const scrollToIndex = Math.ceil(itemCount / 2);
-  const scrollToIndex = Math.ceil(itemCount - 1);
+  // const scrollToIndex = Math.ceil(itemCount - 1);
+
+  useEffect(() => {
+    if (stickToBottom) {
+      setScrollToIndex(itemCount - 1);
+    }
+  }, [itemCount]);
+
+  useEffect(() => {
+    if (stickToBottom) {
+      setScrollToIndex(itemCount - 1);
+    }
+  }, [stickToBottom]);
 
   const RenderItem = ({ index, style }: any) => {
     // let isLoading = !pageCollection.isItemLoaded(index);
@@ -98,11 +113,11 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ pageCollection }) => {
       style={{
         display: "inline-block",
         width: "90vw",
-        height: "90vh",
+        height: "80vh",
         background: "black",
       }}
     >
-      <span>
+      <div style={{ display: "flex", alignItems: "center" }}>
         <button
           onClick={() => {
             setItemCount(itemCount + 1000000);
@@ -118,7 +133,19 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ pageCollection }) => {
           remove{" "}
         </button>
         <h3 style={{ background: "white" }}>{itemCount}</h3>
-      </span>
+
+        <button
+          style={{ background: "white", marginLeft: 20 }}
+          onClick={() => {
+            setStickToBottom(!stickToBottom);
+          }}
+        >
+          Toggle stick to bottom{" "}
+        </button>
+        <h3 style={{ background: "white", marginLeft: 20 }}>
+          {`stick: ${stickToBottom}`}
+        </h3>
+      </div>
       <InfiniteLoader
         isItemLoaded={isItemLo}
         itemCount={itemCount}
@@ -129,6 +156,10 @@ const AutoLoaderList: React.FC<AutoLoaderListProps> = ({ pageCollection }) => {
           <NoLimitList
             style={listStyle}
             itemCount={itemCount}
+            onAtBottomChanged={(value) => {
+              setStickToBottom(value);
+            }}
+            stickToBottom={stickToBottom}
             scrollToIndex={scrollToIndex}
             heightCache={heightCache}
             isItemLoaded={(index) => isItemLo(index)}
